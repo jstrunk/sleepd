@@ -7,7 +7,7 @@ Standards-Version: 3.5.9.0
 
 Package: sleepd
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Architecture: alpha arm i386 m68k powerpc sparc
+Architecture: alpha arm i386 m68k powerpc sparc amd64
 Conflicts: apm-sleep
 Provides: apm-sleep
 Replaces: apm-sleep
