@@ -1,3 +1,9 @@
+sleepd (1.2.2) unstable; urgency=low
+
+  * Don't crash if there is a /proc/acpi/ with no status file.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 31 May 2002 21:36:51 -0400
+
 sleepd (1.2.1) unstable; urgency=low
 
   * Added ${misc:Depends}, for versioned dep on sysvinit for invoke-rc.d.
