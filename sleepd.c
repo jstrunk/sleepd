@@ -124,6 +124,7 @@ void main_loop (void) {
 	FILE *f;
 	char line[64];
 	apm_info ai;
+	int no_dev_warned=1;
 	
 	while (1) {
 		activity=0;
@@ -159,7 +160,10 @@ void main_loop (void) {
 		fclose(f);
 		
 		if (autoprobe && ! probed) {
-			syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
+			if (! no_dev_warned) {
+				no_dev_warned=1;
+				syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
+			}
 		}
 		
 		if (min_batt || check_ac) {
