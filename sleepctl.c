@@ -89,10 +89,19 @@ void verify_daemon_running () {
 }
 
 void show_status (int value) {
-	if (value > 0)
-		printf("sleeping disabled (%i times)\n", value);
-	else
-		printf("sleeping enabled\n");
+	switch (value) {
+		case 0:
+			printf("sleeping enabled\n");
+			break;
+		case 1:
+			printf("sleeping disabled\n");
+			break;
+		case 2:
+			printf("sleeping disabled (twice)\n");
+			break;
+		default:
+			printf("sleeping disabled (%i times)\n", value);
+	}
 }
 
 int main (int argc, char **argv) {

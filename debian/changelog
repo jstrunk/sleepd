@@ -1,3 +1,9 @@
+sleepd (1.1.10) unstable; urgency=low
+
+  * Link with shared apmd library, now that there is one.
+
+ -- Joey Hess <joeyh@debian.org>  Sun, 24 Feb 2002 12:33:57 -0500
+
 sleepd (1.1.9) unstable; urgency=low
 
   * Renamed this package and the daemon from apm-sleep to sleepd,
