@@ -16,7 +16,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <linux/apm_bios.h>
 #include <apm.h>
 #include <signal.h>
 #include "sleepd.h"
