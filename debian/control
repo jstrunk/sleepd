@@ -1,0 +1,22 @@
+Source: sleepd
+Section: admin
+Priority: optional
+Build-Depends: debhelper (>= 3), apmd
+Maintainer: Joey Hess <joeyh@debian.org>
+Standards-Version: 3.5.6.0
+
+Package: sleepd
+Depends: ${shlibs:Depends}
+Architecture: alpha arm i386 m68k powerpc sparc
+Conflicts: apm-sleep
+Provides: apm-sleep
+Replaces: apm-sleep
+Recommends: apmd
+Description: puts a laptop to sleep during inactivity
+ This is a daemon to force laptops to enter apm sleep after some 
+ period of inactivity. This is useful if your laptop does not automatically
+ go to sleep when you aren't using it, and, like me, you often forget to
+ shut it off.
+ .
+ The daemon can also be configured to put a laptop to sleep if its battery 
+ nearly runs out of power.
