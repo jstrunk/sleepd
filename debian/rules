@@ -1,9 +1,4 @@
 #!/usr/bin/make -f
-# Sample debian/rules that uses debhelper.
-# This file is public domain software, originally written by Joey Hess. 
-
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
 
 build: build-stamp
 build-stamp:
@@ -24,11 +19,8 @@ install: build
 	dh_clean -k
 	make install PREFIX=debian/sleepd
 
-# Build architecture-independent files here.
 binary-indep: build install
-# We have nothing to do by default.
 
-# Build architecture-dependent files here.
 binary-arch: build install
 	dh_testdir
 	dh_testroot
