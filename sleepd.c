@@ -138,8 +138,11 @@ void main_loop (void) {
 				for(i=0;line[i];i++)
 					line[i]=tolower(line[i]);
 				/* See if it is a keyboard or mouse. */
-				if ((strstr(line, "mouse") != NULL ||
-				    strstr(line, "keyboard") != NULL)) {
+				if (strstr(line, "mouse") != NULL ||
+				    strstr(line, "keyboard") != NULL ||
+				    /* 2.5 kernels report by chipset,
+				     * this is a ps/2 keyboard/mouse. */
+				    strstr(line, "i8042") != NULL) {
 					do_this_one=1;
 					probed=1;
 				}

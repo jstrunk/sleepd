@@ -15,8 +15,9 @@ low.
 .BR sleepd
 monitors interrupts to detect when your laptop is in use. It defaults to
 automatically figuring out what interupts are used by your keyboard and
-mouse (detection of mouse interrupts is only known to work with PS/2 mice).
-Other interrupts can be specified. After a configurable amount of time with
+mouse, by looking for lines containing things like "keyboard" and "mouse"
+in /proc/interrupts. This may not detect all keyboards and mice, so
+other interrupts can be specified. After a configurable amount of time with
 no activity on these interrupts, it asks
 .BR apm (1)
 or some user-defined program to put the laptop to sleep.
@@ -67,5 +68,9 @@ seconds, which should be fine generally.
 .BR sleepctl (1), apm (1)
 .P
 .B http://kitenet.net/programs/sleepd/
+.SH BUGS
+It cannot always detect keyboard and mouse, especially with 2.5 kernels.
+If the keyboard or mouse interrupt is shared (as is common with usb
+devices), other devices on the same interrupt can keep the system awake.
 .SH AUTHOR
 Joey Hess <joey@kitenet.net>

@@ -1,3 +1,11 @@
+sleepd (1.2.7) unstable; urgency=low
+
+  * Recognise i8042 in /proc/interrupts as a keyboard/mouse. 2.5 kernels
+    report by chipset apparently. Update documentation with more detials.
+    Closes: #193183
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 13 May 2003 17:07:40 -0400
+
 sleepd (1.2.6) unstable; urgency=low
 
   * Added apm.h with newer apm symbols needed to build sleepd on older
