@@ -1,3 +1,9 @@
+sleepd (1.2.9) unstable; urgency=low
+
+  * Sync acpi with wmbattery 2.19 for 2.6 kernel support. Closes: #228113
+
+ -- Joey Hess <joeyh@debian.org>  Mon, 19 Jan 2004 12:18:12 -0500
+
 sleepd (1.2.8) unstable; urgency=low
 
   * Only warn once about no keyboard or mouse irqs, not every update.
