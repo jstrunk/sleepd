@@ -1,3 +1,10 @@
+sleepd (1.2.3) unstable; urgency=low
+
+  * Use debhelper v4.
+  * DEB_BUILD_OPTIONS support.
+
+ -- Joey Hess <joeyh@debian.org>  Sat,  1 Jun 2002 21:36:26 -0400
+
 sleepd (1.2.2) unstable; urgency=low
 
   * Don't crash if there is a /proc/acpi/ with no status file.
