@@ -1,6 +1,6 @@
 This is sleepd, a Debian-native package. Its home page is
 http://kitenet.net/programs/sleepd/
 
-Apm-sleep is copyright 2000, 2001 by Joey Hess <joeyh@debian.org> under the
+Apm-sleep is copyright 2000-2002 by Joey Hess <joeyh@debian.org> under the
 terms of the GNU GPL. On Debian systems, the full text of the GPL is in
 /usr/share/common-licenses/GPL

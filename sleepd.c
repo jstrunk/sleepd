@@ -14,9 +14,11 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <apm.h>
+#include "acpi.h"
 #include <signal.h>
 #include "sleepd.h"
 
@@ -31,6 +33,7 @@ int have_irqs=0;
 int sleep_time = DEFAULT_SLEEP_TIME;
 int no_sleep=0;
 int min_batt=0;
+int use_acpi=0;
 
 void usage () {
 	fprintf(stderr, "Usage: sleepd [-s command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n]\n");
@@ -55,7 +58,7 @@ void parse_command_line (int argc, char **argv) {
 	int i;
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "nu:U:wi:hac:b:", long_options, NULL);
+		c=getopt_long(argc,argv, "s:nu:U:wi:hac:b:", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -67,10 +70,6 @@ void parse_command_line (int argc, char **argv) {
 				max_unused=atoi(optarg);
 				break;
 			case 'U':
-				if (apm_exists() != 0) {
-					fprintf(stderr, "sleepd: apm support not present in kernel\n");
-					exit(1);
-				}
 				check_ac=1;
 				ac_max_unused=atoi(optarg);
 				break;
@@ -111,6 +110,7 @@ void parse_command_line (int argc, char **argv) {
 		usage();
 		exit(1);
 	}
+
 	if (force_autoprobe)
 		autoprobe=1;
 }
@@ -159,8 +159,12 @@ void main_loop (void) {
 			syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
 		}
 		
-		if (min_batt || check_ac)
-			apm_read(&ai);
+		if (min_batt || check_ac) {
+			if (use_acpi)
+				acpi_read(1, &ai);
+			else 
+				apm_read(&ai);
+		}
 
 		if (min_batt && ai.ac_line_status != 1 && 
 		    ai.battery_percentage < min_batt) {
@@ -183,7 +187,7 @@ void main_loop (void) {
 					sleep_now = total_unused >= ac_max_unused;
 				}
 			}
-			else {
+			else if (max_unused > 0) {
 				sleep_now = total_unused >= max_unused;
 			}
 
@@ -269,6 +273,18 @@ int main (int argc, char **argv) {
 		else {
 			fprintf(f, "%i\n", getpid());
 			fclose(f);
+		}
+	}
+	
+	if (check_ac || min_batt) {
+		if (apm_exists() != 0) {
+			if (acpi_supported() && acpi_batt_count > 0) {
+				use_acpi=1;
+			}
+			else {
+				fprintf(stderr, "sleepd: apm/acpi support not present in kernel\n");
+				exit(1);
+			}
 		}
 	}
 	

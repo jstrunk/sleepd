@@ -8,7 +8,8 @@ sleepctl \- enable/disable sleepd
 allows temporarily disabling of the
 .BR sleepd(8)
 daemon, by a regular user. This can be useful when you're in the middle of
-a long download, and don't want the system going to sleep in the middle.
+a long download or compile, and don't want the system going to sleep in the
+middle.
 .P
 "sleepctl off" makes sleepd not put the system to sleep even if it
 thinks it is idle. If this command is run more than once, the requests

@@ -1,3 +1,16 @@
+sleepd (1.2.0) unstable; urgency=low
+
+  * ACPI support. Have to use software suspend to sleep though (unless you're
+    Linus or something), and so there is some manual tweaking required.
+  * Changed the default check period to 10 seconds, as ACPI is a mite more
+    expensive, and anything under a minute should really be fine.
+  * Support use of -b w/o -U flag.
+  * Support -u 0 to disable idle checking.
+  * Made -s actually work.
+  * debhelper v4
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 24 May 2002 13:28:47 -0400
+
 sleepd (1.1.10) unstable; urgency=low
 
   * Link with shared apmd library, now that there is one.

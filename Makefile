@@ -1,11 +1,11 @@
-CFLAGS=-g -Wall
+CFLAGS=-g -Wall -DACPI_APM
 BINS=sleepd sleepctl
 PREFIX=/
 
 all: $(BINS)
 
-sleepd: sleepd.c
-	$(CC) -o sleepd sleepd.c -lapm
+sleepd: sleepd.o acpi.o
+	$(CC) -o sleepd sleepd.o acpi.o -lapm
 
 clean:
 	rm -f $(BINS) *.o

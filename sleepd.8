@@ -19,7 +19,7 @@ mouse (detection of mouse interrupts is only known to work with PS/2 mice).
 Other interrupts can be specified. After a configurable amount of time with
 no activity on these interrupts, it asks
 .BR apm (1)
-to put the laptop to sleep.
+or some user-defined program to put the laptop to sleep.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help
@@ -30,7 +30,8 @@ Don't fork to background; run in forground.
 .TP
 .B \-u, \-\-unused
 Number of seconds the laptop can remain idle before being put to sleep.
-Defaults to 10 minutes.
+Defaults to 600 secods (10 minutes). Set to 0 to disable any sleeping due
+to idleness.
 .TP
 .B \-U, \-\-ac-unused
 If set, controls the number of seconds the laptop can remain idle before
@@ -49,16 +50,18 @@ default, but specifying irqs manually with -i disables the autoprobe. This
 turns it back on.
 .TP
 .B \-s, \-\-sleep-command
-Command to run to put the laptop to sleep. Defaults to "apm -s".
+Command to run to put the laptop to sleep. Defaults to "apm -s". If your
+laptop uses ACPI, you may need to get software suspend working in your
+kernel, and write a command to use that.
 .TP
 .B \-b, \-\-battery
 If this option is specified, the daemon will put the laptop to sleep if the
 percentage of battery charge drops below the specified number and the system
 is off AC power. This is useful for some laptops which don't handle this
-themselves.
+themselves. It supports both APM and ACPI for querying battery status.
 .TP
 .B \-c, \-\-check-period
-Number of seconds between check on system status. Defaults to 2
+Number of seconds between check on system status. Defaults to 10
 seconds, which should be fine generally.
 .SH "SEE ALSO"
 .BR sleepctl (1), apm (1)
