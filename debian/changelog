@@ -1,3 +1,10 @@
+sleepd (1.2.8) unstable; urgency=low
+
+  * Only warn once about no keyboard or mouse irqs, not every update.
+    Closes: #226389, although it still probably has 2.6 kernel issues.
+
+ -- Joey Hess <joeyh@debian.org>  Tue,  6 Jan 2004 20:05:06 -0500
+
 sleepd (1.2.7) unstable; urgency=low
 
   * Recognise i8042 in /proc/interrupts as a keyboard/mouse. 2.5 kernels
