@@ -20,7 +20,7 @@ case "$1" in
 	test -e /dev/apm_bios && touch /dev/apm_bios
 
 	echo -n "Starting $DESC: "
-	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+	eval start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
 		--exec $DAEMON -- $PARAMS
 	echo "$NAME."
 	;;
