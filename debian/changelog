@@ -1,3 +1,9 @@
+sleepd (1.2.1) unstable; urgency=low
+
+  * Added ${misc:Depends}, for versioned dep on sysvinit for invoke-rc.d.
+
+ -- Joey Hess <joeyh@debian.org>  Mon, 27 May 2002 11:32:37 -0400
+
 sleepd (1.2.0) unstable; urgency=low
 
   * ACPI support. Have to use software suspend to sleep though (unless you're
