@@ -46,7 +46,7 @@ installhook:
 	cp TODO $(DIR)/TODO
 	echo -n $(VERSION) > $(DIR)/LATEST-VERSION-IS
 	rm -f $(DIR)/*.tar.gz
-	ln -s /home/joey/debian/unstable/sleepd_$(VERSION).tar.gz $(DIR)/sleepd_$(VERSION).tar.gz
+	ln -s /home/joey/debian/unstable/sleepd_$(VERSION).tar.gz $(DIR)
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary install
