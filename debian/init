@@ -14,29 +14,35 @@ if [ -e /etc/default/sleepd ]; then
 	. /etc/default/sleepd
 fi
 
+function stop() {
+   eval start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/$NAME.pid \
+		--exec $DAEMON -- $PARAMS
+}
+
+function start() {
+   eval start-stop-daemon --quiet --start --pidfile /var/run/$NAME.pid \
+		--exec $DAEMON -- $PARAMS
+}
+
 case "$1" in
   start)
   	# Ensure apm module is loaded.
 	test -e /dev/apm_bios && touch /dev/apm_bios
 
 	echo -n "Starting $DESC: "
-	eval start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON -- $PARAMS
+	start
 	echo "$NAME."
 	;;
   stop)
 	echo -n "Stopping $DESC: "
-	start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON -- $PARAMS
+	stop
 	echo "$NAME."
 	;;
   restart|force-reload)
 	echo -n "Restarting $DESC: "
-	start-stop-daemon --stop --quiet --oknodo --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON -- $PARAMS
+	stop
 	sleep 1
-	start-stop-daemon --start --quiet --pidfile \
-		/var/run/$NAME.pid --exec $DAEMON -- $PARAMS
+	start
 	echo "$NAME."
 	;;
   *)

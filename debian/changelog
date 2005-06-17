@@ -1,3 +1,12 @@
+sleepd (1.2.13) unstable; urgency=low
+
+  * Fix init script so restart works if PARAMS includes quotes.
+    Thanks, Luigi Bai. Closes: #311406
+  * Sync acpi code with wmbattery 2.22, to avoid the ugly chdir to /proc/acpi
+    and add a bit of error checking.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 17 Jun 2005 14:01:27 -0400
+
 sleepd (1.2.12) unstable; urgency=low
 
   * Add ppc64 to arch list. Closes: #301091
