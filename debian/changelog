@@ -1,3 +1,9 @@
+sleepd (1.2.14) unstable; urgency=low
+
+  * Patch from Stephen Gildea to add --and option.
+
+ -- Joey Hess <joeyh@debian.org>  Sat, 22 Oct 2005 16:05:28 -0400
+
 sleepd (1.2.13) unstable; urgency=low
 
   * Fix init script so restart works if PARAMS includes quotes.

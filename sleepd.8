@@ -3,7 +3,7 @@
 sleepd \- puts a laptop to sleep during inactivity
 .SH SYNOPSIS
 .B sleepd
-.I "[-s command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n]"
+.I "[-s command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n] [-A]"
 .SH DESCRIPTION
 .BR sleepd
 is a daemon to force laptops to enter apm sleep after some period of
@@ -60,6 +60,10 @@ If this option is specified, the daemon will put the laptop to sleep if the
 percentage of battery charge drops below the specified number and the system
 is off AC power. This is useful for some laptops which don't handle this
 themselves. It supports both APM and ACPI for querying battery status.
+.TP
+.B \-A, \-\-and
+Only go to sleep if all specified conditions are met. For example, only
+sleep if idle and if the battery is low.
 .TP
 .B \-c, \-\-check-period
 Number of seconds between check on system status. Defaults to 10

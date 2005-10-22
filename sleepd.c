@@ -34,9 +34,10 @@ int sleep_time = DEFAULT_SLEEP_TIME;
 int no_sleep=0;
 int min_batt=0;
 int use_acpi=0;
+int require_unused_and_battery=0;	/* --and or -A option */
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -51,6 +52,7 @@ void parse_command_line (int argc, char **argv) {
 		{"auto", 0, NULL, 'a'},
 		{"check-period", 1, NULL, 'c'},
 		{"battery", 1, NULL, 'b'},
+		{"and", 0, NULL, 'A'},
 		{0, 0, 0, 0}
 	};
 	int force_autoprobe=0;
@@ -58,7 +60,7 @@ void parse_command_line (int argc, char **argv) {
 	int i;
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:nu:U:wi:hac:b:", long_options, NULL);
+		c=getopt_long(argc,argv, "s:nu:U:wi:hac:b:A", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -104,6 +106,9 @@ void parse_command_line (int argc, char **argv) {
 					exit(1);
 				}
 				break;
+			case 'A':
+				require_unused_and_battery=1;
+				break;
 		}
 	}
 	if (optind < argc) {
@@ -119,6 +124,7 @@ void parse_command_line (int argc, char **argv) {
 void main_loop (void) {
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
 	int activity, i, sleep_now=0, total_unused=0, do_this_one=0, probed=0;
+	int sleep_battery=0;
 	long v;
 	time_t nowtime, oldtime=0;
 	FILE *f;
@@ -175,12 +181,16 @@ void main_loop (void) {
 
 		if (min_batt && ai.ac_line_status != 1 && 
 		    ai.battery_percentage < min_batt) {
-			syslog(LOG_NOTICE, "battery is low; forcing sleep");
+			sleep_battery = 1;
+		}
+		if (sleep_battery && ! require_unused_and_battery) {
+			syslog(LOG_NOTICE, "battery level %d%% is below %d%%; forcing sleep", ai.battery_percentage, min_batt);
 			if (system(sleep_command) != 0)
 				syslog(LOG_ERR, "%s failed", sleep_command);
 			/* This counts as activity; to prevent double sleeps. */
 			activity=1;
 			oldtime=0;
+			sleep_battery=0;
 		}
 		
 		if (activity) {
@@ -198,13 +208,23 @@ void main_loop (void) {
 				sleep_now = total_unused >= max_unused;
 			}
 
-			if (sleep_now && ! no_sleep) {
-				syslog(LOG_NOTICE, "system is inactive; forcing sleep");
+			if (sleep_now && ! no_sleep && ! require_unused_and_battery) {
+				syslog(LOG_NOTICE, "system inactive for %ds; forcing sleep", total_unused);
 				if (system(sleep_command) != 0)
 					syslog(LOG_ERR, "%s failed", sleep_command);
 				total_unused=0;
 				oldtime=0;
 				sleep_now=0;
+			}
+			else if (sleep_now && ! no_sleep && sleep_battery) {
+				syslog(LOG_NOTICE, "system inactive for %ds and battery level %d%% is below %d%%; forcing sleep", 
+				       total_unused, ai.battery_percentage, min_batt);
+				if (system(sleep_command) != 0)
+					syslog(LOG_ERR, "%s failed", sleep_command);
+				total_unused=0;
+				oldtime=0;
+				sleep_now=0;
+				sleep_battery=0;
 			}
 		}
 		
