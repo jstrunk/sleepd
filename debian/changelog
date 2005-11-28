@@ -1,3 +1,10 @@
+sleepd (1.2.15) unstable; urgency=low
+
+  * Fix bashisms in init script.
+  * Reindent init script.
+
+ -- Joey Hess <joeyh@debian.org>  Sun, 27 Nov 2005 23:26:13 -0500
+
 sleepd (1.2.14) unstable; urgency=low
 
   * Patch from Stephen Gildea to add --and option.
