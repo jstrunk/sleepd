@@ -1,3 +1,10 @@
+sleepd (1.2.16) unstable; urgency=low
+
+  * Fix XSIisms in preinst.
+  * Current standards version.
+
+ -- Joey Hess <joeyh@debian.org>  Sun, 18 Dec 2005 17:32:51 -0500
+
 sleepd (1.2.15) unstable; urgency=low
 
   * Fix bashisms in init script.
