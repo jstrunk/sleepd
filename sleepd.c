@@ -34,7 +34,7 @@ int daemonize=1;
 int have_irqs=0;
 int sleep_time = DEFAULT_SLEEP_TIME;
 int no_sleep=0;
-int min_batt=0;
+signed int min_batt=-1;
 int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 
@@ -105,7 +105,7 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'b':
 				min_batt=atoi(optarg);
-				if (min_batt <= 0) {
+				if (min_batt < 0) {
 					fprintf(stderr, "sleepd: bad minimumn battery percentage %d\n", min_batt);
 					exit(1);
 				}
@@ -189,7 +189,7 @@ void main_loop (void) {
 			activity=1;
 		}
 		
-		if (min_batt && ai.ac_line_status != 1 && 
+		if (min_batt != -1 && ai.ac_line_status != 1 && 
 		    ai.battery_percentage < min_batt) {
 			sleep_battery = 1;
 		}

@@ -1,4 +1,4 @@
-sleepd (2.0) unstable; urgency=low
+sleepd (1.3.0) unstable; urgency=low
 
   * On acpi systems, default to "hibernate --force" if no sleep command
     is specified.
@@ -11,8 +11,12 @@ sleepd (2.0) unstable; urgency=low
   * Treat AC plug/unplug events as activity. Closes: #348386
   * No longer go to sleep while on AC power unless --ac-unused is set.
     Closes: #100087
+  * Allow specifying a --battery number of 0, which was previously invalid.
+    May be useful on hardware where the acpi battery calculations fall below
+    zero when the battery is very depleted, to make the system sleep at the
+    very last minute. This is experimental.
 
- -- Joey Hess <joeyh@debian.org>  Sun, 29 Jan 2006 20:52:41 -0500
+ -- Joey Hess <joeyh@debian.org>  Sun, 29 Jan 2006 21:11:39 -0500
 
 sleepd (1.2.16) unstable; urgency=low
 
