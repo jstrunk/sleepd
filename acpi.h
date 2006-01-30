@@ -10,7 +10,7 @@
 //#define ACPI_APM 1
 
 /* The lowest version of ACPI proc files supported. */
-#define ACPI_MIN_VERSION 20011018
+#define ACPI_VERSION 20011018
 
 /* The number of acpi items of each class supported. */
 #define ACPI_MAXITEM 8

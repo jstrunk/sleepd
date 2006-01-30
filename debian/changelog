@@ -15,6 +15,9 @@ sleepd (1.3.0) unstable; urgency=low
     May be useful on hardware where the acpi battery calculations fall below
     zero when the battery is very depleted, to make the system sleep at the
     very last minute. This is experimental.
+  * Merge in changes from procmeter3's version of acpi.c, made by Andrew M.
+    Bishop, that avoid the ugly chdir to /proc/acpi and add a bit of error
+    checking. Now fully synced with procmeter3 3.4d and wmbattery 2.24.
 
  -- Joey Hess <joeyh@debian.org>  Sun, 29 Jan 2006 21:11:39 -0500
 
