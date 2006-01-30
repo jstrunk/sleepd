@@ -36,9 +36,8 @@ to idleness.
 .TP
 .B \-U, \-\-ac-unused
 If set, controls the number of seconds the laptop can remain idle before
-being put to sleep when running on AC power. If not set, no distinction
-made between being on AC power or not. Set to 0 to disable any sleeping
-while the laptop is on AC power.
+being put to sleep when running on AC power. If not set, the laptop will
+not sleep when it's on AC power.
 .TP
 .B \-i, \-\-irq
 Adds an irq to the list that is watched. Using this switch disables
@@ -78,7 +77,7 @@ seconds, which should be fine generally.
 .P
 .B http://kitenet.net/programs/sleepd/
 .SH BUGS
-It cannot always detect keyboard and mouse, especially with 2.6 kernels.
+It cannot always detect keyboard and mouse.
 If the keyboard or mouse interrupt is shared (as is common with usb
 devices), other devices on the same interrupt can keep the system awake.
 .SH AUTHOR

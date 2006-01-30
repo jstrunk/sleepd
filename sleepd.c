@@ -24,8 +24,7 @@
 
 int irqs[MAX_IRQS]; /* irqs to examine have a value of 1 */
 int max_unused=10 * 60; /* in seconds */
-int check_ac=0;
-int ac_max_unused;
+int ac_max_unused=0;
 char *apm_sleep_command="apm -s";
 char *acpi_sleep_command="hibernate --force";
 char *sleep_command=NULL;
@@ -78,7 +77,6 @@ void parse_command_line (int argc, char **argv) {
 				max_unused=atoi(optarg);
 				break;
 			case 'U':
-				check_ac=1;
 				ac_max_unused=atoi(optarg);
 				break;
 			case 'i':
@@ -210,8 +208,8 @@ void main_loop (void) {
 		}
 		else {
 			total_unused += sleep_time;
-			if (check_ac && ai.ac_line_status == 1) {
-				/* On wall power and it matters. */
+			if (ai.ac_line_status == 1) {
+				/* On wall power. */
 				if (ac_max_unused > 0) {
 					sleep_now = total_unused >= ac_max_unused;
 				}
@@ -315,27 +313,25 @@ int main (int argc, char **argv) {
 		}
 	}
 	
-	if (check_ac || min_batt) {
-		if (apm_exists() != 0) {
-			if (acpi_supported() && acpi_batt_count > 0) {
-				use_acpi=1;
-			}
-			else {
-				fprintf(stderr, "sleepd: apm/acpi support not present in kernel\n");
-				exit(1);
-			}
+	if (apm_exists() != 0) {
+		if (acpi_supported() && acpi_batt_count > 0) {
+			use_acpi=1;
 		}
-		if (! sleep_command) {
-			if (use_acpi) {
-				sleep_command=acpi_sleep_command;
-			}
-			else {
-				sleep_command=apm_sleep_command;
-			}
+		else {
+			fprintf(stderr, "sleepd: apm/acpi support not present in kernel\n");
+			exit(1);
 		}
-		if (! hibernate_command) {
-			hibernate_command=sleep_command;
+	}
+	if (! sleep_command) {
+		if (use_acpi) {
+			sleep_command=acpi_sleep_command;
 		}
+		else {
+			sleep_command=apm_sleep_command;
+		}
+	}
+	if (! hibernate_command) {
+		hibernate_command=sleep_command;
 	}
 	
 	main_loop();

@@ -1,16 +1,18 @@
-sleepd (1.2.17) UNRELEASED; urgency=low
+sleepd (2.0) unstable; urgency=low
 
   * On acpi systems, default to "hibernate --force" if no sleep command
     is specified.
   * Recommend hibernate | apmd.
-  * Removed some bits like the init script that claimed it was APM specific.
+  * Adjusted some bits like the init script that claimed it was APM specific.
   * Fix path to control file on sleepctl man page.
   * Patch based on a patch by Wolfgang Karall to add a --hibernate-command
     option, which can be used to specify a different command to run when
     the battery is low vs when sleeping due to inactivity.
   * Treat AC plug/unplug events as activity. Closes: #348386
+  * No longer go to sleep while on AC power unless --ac-unused is set.
+    Closes: #100087
 
- -- Joey Hess <joeyh@debian.org>  Sun, 29 Jan 2006 17:55:13 -0500
+ -- Joey Hess <joeyh@debian.org>  Sun, 29 Jan 2006 20:52:41 -0500
 
 sleepd (1.2.16) unstable; urgency=low
 
