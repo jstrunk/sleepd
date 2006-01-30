@@ -3,10 +3,10 @@
 sleepd \- puts a laptop to sleep during inactivity
 .SH SYNOPSIS
 .B sleepd
-.I "[-s command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n] [-A]"
+.I "[-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n] [-A]"
 .SH DESCRIPTION
 .BR sleepd
-is a daemon to force laptops to enter apm sleep after some period of
+is a daemon to force laptops to go to sleep after some period of
 inactivity. This is useful if your laptop does not automatically go to
 sleep when you aren't using it, and, like me, you often forget to shut it
 off. It is also capable of suspending a laptop when its battery gets very
@@ -51,15 +51,20 @@ default, but specifying irqs manually with -i disables the autoprobe. This
 turns it back on.
 .TP
 .B \-s, \-\-sleep-command
-Command to run to put the laptop to sleep. Defaults to "apm -s". If your
-laptop uses ACPI, you may need to get software suspend working in your
-kernel, and write a command to use that.
+Command to run to put the laptop to sleep. Defaults to "apm -s" for systems
+with apm and "hibernate --force" for systems with ACPI.
 .TP
 .B \-b, \-\-battery
 If this option is specified, the daemon will put the laptop to sleep if the
 percentage of battery charge drops below the specified number and the system
 is off AC power. This is useful for some laptops which don't handle this
 themselves. It supports both APM and ACPI for querying battery status.
+.TP
+.B \-d, \-\-hibernate-command
+A command to run instead of the regular sleep command when the battery is
+low. This can be useful if you want to make the system go to sleep when
+it's not active, but suspend to disk if the battery is low. If not set, the
+sleep command is used.
 .TP
 .B \-A, \-\-and
 Only go to sleep if all specified conditions are met. For example, only
@@ -73,7 +78,7 @@ seconds, which should be fine generally.
 .P
 .B http://kitenet.net/programs/sleepd/
 .SH BUGS
-It cannot always detect keyboard and mouse, especially with 2.5 kernels.
+It cannot always detect keyboard and mouse, especially with 2.6 kernels.
 If the keyboard or mouse interrupt is shared (as is common with usb
 devices), other devices on the same interrupt can keep the system awake.
 .SH AUTHOR

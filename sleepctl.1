@@ -31,7 +31,7 @@ of inactivity. This is by design, so you may easily and naturally undo the
 effects of a "sleepctl off" without remembering to turn it back on.
 .P
 This program communicates with sleepd by writing to the file
-/var/lib/sleepd/control. As such, it needs read/write access to that
+/var/run/sleepd.ctl. As such, it needs read/write access to that
 file. It also needs to run as whatever user sleepd runs as, so it can
 hup the daemon.
 .SH EXAMPLES

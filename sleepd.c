@@ -1,7 +1,7 @@
 /*
  * forced apm sleep daemon
  *
- * Copyright 2000, 2001 Joey Hess <joeyh@kitenet.net> under the terms of the
+ * Copyright 2000-2006 Joey Hess <joeyh@kitenet.net> under the terms of the
  * GNU GPL.
  */
 
@@ -26,7 +26,10 @@ int irqs[MAX_IRQS]; /* irqs to examine have a value of 1 */
 int max_unused=10 * 60; /* in seconds */
 int check_ac=0;
 int ac_max_unused;
-char *sleep_command="apm -s";
+char *apm_sleep_command="apm -s";
+char *acpi_sleep_command="hibernate --force";
+char *sleep_command=NULL;
+char *hibernate_command=NULL;
 int autoprobe=1;
 int daemonize=1;
 int have_irqs=0;
@@ -37,7 +40,7 @@ int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -49,6 +52,7 @@ void parse_command_line (int argc, char **argv) {
 		{"irq", 1, NULL, 'i'},
 		{"help", 0, NULL, 'h'},
 		{"sleep-command", 1, NULL, 's'},
+		{"hibernate-command", 1, NULL, 'd'},
 		{"auto", 0, NULL, 'a'},
 		{"check-period", 1, NULL, 'c'},
 		{"battery", 1, NULL, 'b'},
@@ -60,11 +64,13 @@ void parse_command_line (int argc, char **argv) {
 	int i;
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:nu:U:wi:hac:b:A", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nu:U:wi:hac:b:A", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
 				break;
+			case 'd':
+				hibernate_command=strdup(optarg);
 			case 'n':
 				daemonize=0;
 				break;
@@ -125,6 +131,7 @@ void main_loop (void) {
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
 	int activity, i, sleep_now=0, total_unused=0, do_this_one=0, probed=0;
 	int sleep_battery=0;
+	int prev_ac_line_status=0;
 	long v;
 	time_t nowtime, oldtime=0;
 	FILE *f;
@@ -172,21 +179,26 @@ void main_loop (void) {
 			}
 		}
 		
-		if (min_batt || check_ac) {
-			if (use_acpi)
-				acpi_read(1, &ai);
-			else 
-				apm_read(&ai);
+		if (use_acpi) {
+			acpi_read(1, &ai);
+		}
+		else {
+			apm_read(&ai);
 		}
 
+		if (ai.ac_line_status != prev_ac_line_status) {
+			/* AC plug/unplug counts as activity. */
+			activity=1;
+		}
+		
 		if (min_batt && ai.ac_line_status != 1 && 
 		    ai.battery_percentage < min_batt) {
 			sleep_battery = 1;
 		}
 		if (sleep_battery && ! require_unused_and_battery) {
-			syslog(LOG_NOTICE, "battery level %d%% is below %d%%; forcing sleep", ai.battery_percentage, min_batt);
-			if (system(sleep_command) != 0)
-				syslog(LOG_ERR, "%s failed", sleep_command);
+			syslog(LOG_NOTICE, "battery level %d%% is below %d%%; forcing hibernation", ai.battery_percentage, min_batt);
+			if (system(hibernate_command) != 0)
+				syslog(LOG_ERR, "%s failed", hibernate_command);
 			/* This counts as activity; to prevent double sleeps. */
 			activity=1;
 			oldtime=0;
@@ -217,10 +229,10 @@ void main_loop (void) {
 				sleep_now=0;
 			}
 			else if (sleep_now && ! no_sleep && sleep_battery) {
-				syslog(LOG_NOTICE, "system inactive for %ds and battery level %d%% is below %d%%; forcing sleep", 
+				syslog(LOG_NOTICE, "system inactive for %ds and battery level %d%% is below %d%%; forcing hibernaton", 
 				       total_unused, ai.battery_percentage, min_batt);
-				if (system(sleep_command) != 0)
-					syslog(LOG_ERR, "%s failed", sleep_command);
+				if (system(hibernate_command) != 0)
+					syslog(LOG_ERR, "%s failed", hibernate_command);
 				total_unused=0;
 				oldtime=0;
 				sleep_now=0;
@@ -312,6 +324,17 @@ int main (int argc, char **argv) {
 				fprintf(stderr, "sleepd: apm/acpi support not present in kernel\n");
 				exit(1);
 			}
+		}
+		if (! sleep_command) {
+			if (use_acpi) {
+				sleep_command=acpi_sleep_command;
+			}
+			else {
+				sleep_command=apm_sleep_command;
+			}
+		}
+		if (! hibernate_command) {
+			hibernate_command=sleep_command;
 		}
 	}
 	

@@ -2,7 +2,7 @@
 
 DAEMON=/usr/sbin/sleepd
 NAME=sleepd
-DESC="APM sleep daemon"
+DESC="sleep daemon"
 
 test -f $DAEMON || exit 0
 
