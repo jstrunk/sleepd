@@ -8,19 +8,14 @@ Standards-Version: 3.6.2
 Package: sleepd
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: hibernate | apmd
-Architecture: alpha arm i386 m68k powerpc sparc amd64 ppc64
+Architecture: all
 Conflicts: apm-sleep
 Provides: apm-sleep
 Replaces: apm-sleep
 Recommends: apmd
-Description: puts a laptop to sleep during inactivity
- This is a daemon to force laptops to enter apm sleep after some 
- period of inactivity. This is useful if your laptop does not automatically
- go to sleep when you aren't using it, and, like me, you often forget to
- shut it off.
- .
- The daemon can also be configured to put a laptop to sleep if its battery 
- nearly runs out of power.
+Description: puts an inactive or low battery laptop to sleep
+ This is a daemon to put a laptop to sleep if it is not being used or
+ if the battery is low.
  .
  It supports both APM and ACPI, although in both cases external programs
  must be used to actually put the system to sleep.
