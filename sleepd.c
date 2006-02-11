@@ -188,6 +188,7 @@ void main_loop (void) {
 			/* AC plug/unplug counts as activity. */
 			activity=1;
 		}
+		prev_ac_line_status=ai.ac_line_status;
 		
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
 		    ai.battery_percentage < min_batt) {
