@@ -70,6 +70,7 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'd':
 				hibernate_command=strdup(optarg);
+				break;
 			case 'n':
 				daemonize=0;
 				break;
