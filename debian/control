@@ -8,7 +8,7 @@ Standards-Version: 3.6.2
 Package: sleepd
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: hibernate | apmd
-Architecture: all
+Architecture: any
 Conflicts: apm-sleep
 Provides: apm-sleep
 Replaces: apm-sleep
