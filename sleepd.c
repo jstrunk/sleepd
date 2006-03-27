@@ -316,7 +316,7 @@ int main (int argc, char **argv) {
 	}
 	
 	if (apm_exists() != 0) {
-		if (acpi_supported() && acpi_batt_count > 0) {
+		if (acpi_supported()) {
 			use_acpi=1;
 		}
 		else {
