@@ -1,3 +1,10 @@
+sleepd (1.3.6) unstable; urgency=low
+
+  * Use lsb-base logging functions and add lsb init script comment cruft to
+    init script.
+
+ -- Joey Hess <joeyh@debian.org>  Sat, 26 Aug 2006 19:17:46 -0400
+
 sleepd (1.3.5) unstable; urgency=low
 
   * Patch from Christian Schäfer to add support for using on acpi systems

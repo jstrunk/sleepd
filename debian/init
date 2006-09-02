@@ -1,10 +1,20 @@
 #! /bin/sh
+#
+### BEGIN INIT INFO
+# Provides:          sleepd
+# Required-Start:    $syslog $local_fs $remote_fs
+# Required-Stop:     $syslog $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: Sleep daemon
+# Description:       init script for the sleepd daemon
 
 DAEMON=/usr/sbin/sleepd
 NAME=sleepd
-DESC="sleep daemon"
 
 test -f $DAEMON || exit 0
+
+. /lib/lsb/init-functions
 
 set -e
 
@@ -29,21 +39,19 @@ case "$1" in
 		# Ensure apm module is loaded.
 		test -e /dev/apm_bios && touch /dev/apm_bios
 
-		echo -n "Starting $DESC: "
-		start
-		echo "$NAME."
+		log_daemon_msg "Starting sleep daemon" "sleepd"
+		start_daemon -p /var/run/$NAME.pid $DAEMON $PARAMS
+		log_end_msg $?
 	;;
 	stop)
-		echo -n "Stopping $DESC: "
-		stop
-		echo "$NAME."
+		log_daemon_msg "Stopping sleep daemon" "sleepd"
+		killproc -p /var/run/$NAME.pid $DAEMON
+		log_end_msg $?
 	;;
 	restart|force-reload)
-		echo -n "Restarting $DESC: "
-		stop
+		$0 stop
 		sleep 1
-		start
-		echo "$NAME."
+		$0 start
 	;;
 	*)
 		echo "Usage: /etc/init.d/$NAME {start|stop|restart|force-reload}" >&2

@@ -6,7 +6,7 @@ Maintainer: Joey Hess <joeyh@debian.org>
 Standards-Version: 3.6.2
 
 Package: sleepd
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, lsb-base
 Recommends: hibernate | apmd
 Architecture: any
 Conflicts: apm-sleep
