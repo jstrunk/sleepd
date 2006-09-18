@@ -24,23 +24,13 @@ if [ -e /etc/default/sleepd ]; then
 	. /etc/default/sleepd
 fi
 
-stop() {
-   eval start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON -- $PARAMS
-}
-
-start() {
-   eval start-stop-daemon --quiet --start --pidfile /var/run/$NAME.pid \
-		--exec $DAEMON -- $PARAMS
-}
-
 case "$1" in
 	start)
 		# Ensure apm module is loaded.
 		test -e /dev/apm_bios && touch /dev/apm_bios
 
 		log_daemon_msg "Starting sleep daemon" "sleepd"
-		start_daemon -p /var/run/$NAME.pid $DAEMON $PARAMS
+		eval start_daemon -p /var/run/$NAME.pid $DAEMON $PARAMS
 		log_end_msg $?
 	;;
 	stop)
