@@ -13,7 +13,6 @@ Architecture: any
 Conflicts: apm-sleep
 Provides: apm-sleep
 Replaces: apm-sleep
-Recommends: apmd
 Description: puts an inactive or low battery laptop to sleep
  This is a daemon to put a laptop to sleep if it is not being used or
  if the battery is low.
