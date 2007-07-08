@@ -5,9 +5,10 @@
 # Required-Start:    $syslog $local_fs $remote_fs
 # Required-Stop:     $syslog $local_fs $remote_fs
 # Default-Start:     2 3 4 5
-# Default-Stop:      S 0 1 6
+# Default-Stop:      0 1 6
 # Short-Description: Sleep daemon
 # Description:       init script for the sleepd daemon
+### END INIT INFO
 
 DAEMON=/usr/sbin/sleepd
 NAME=sleepd
