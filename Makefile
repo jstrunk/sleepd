@@ -26,5 +26,5 @@ install: $(BINS)
 		$(PREFIX)/usr/bin/ $(PREFIX)/usr/share/man/man1/
 	$(INSTALL_PROGRAM) sleepd $(PREFIX)/usr/sbin/
 	install -m 0644 sleepd.8 $(PREFIX)/usr/share/man/man8/
-	install -m 4755 -o root -g root -s sleepctl $(PREFIX)/usr/bin/
+	$(INSTALL_PROGRAM) -m 4755 -o root -g root sleepctl $(PREFIX)/usr/bin/
 	install -m 0644 sleepctl.1 $(PREFIX)/usr/share/man/man1/
