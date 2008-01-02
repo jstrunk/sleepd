@@ -1,3 +1,14 @@
+sleepd (1.3.17) UNRELEASED; urgency=low
+
+  * Only register the init script to stop sleepd at runlevel 1. The general
+    process killer will handle killing it cleanly in runlevels 0 and 6.
+  * Run stop script at point 80 instead of 20, to be symmetric with the point
+    it's started.
+  * These changes will only take effect for new installs of the package,
+    to avoid clobbering local changes.
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 01 Jan 2008 21:55:27 -0500
+
 sleepd (1.3.16) unstable; urgency=low
 
   * Correct issue with the statically allocated string returned by
