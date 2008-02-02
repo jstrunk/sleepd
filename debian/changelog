@@ -6,6 +6,9 @@ sleepd (1.3.17) UNRELEASED; urgency=low
     it's started.
   * These changes will only take effect for new installs of the package,
     to avoid clobbering local changes.
+  * Merge HAL support from wmbattery. Support for the old kernel interfaces
+    (APM, ACPI, etc) is still present, but to use new interfaces such
+    2.6.24's /sys/class/power_adapter, you'll have to have dbus and hal.
 
  -- Joey Hess <joeyh@debian.org>  Tue, 01 Jan 2008 21:55:27 -0500
 

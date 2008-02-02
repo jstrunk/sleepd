@@ -57,7 +57,7 @@ with apm and "hibernate --force" for systems with ACPI.
 If this option is specified, the daemon will put the laptop to sleep if the
 percentage of battery charge drops below the specified number and the system
 is off AC power. This is useful for some laptops which don't handle this
-themselves. It supports both APM and ACPI for querying battery status.
+themselves. It supports using APM, ACPI, and HAL for querying battery status.
 .TP
 .B \-d, \-\-hibernate-command
 A command to run instead of the regular sleep command when the battery is

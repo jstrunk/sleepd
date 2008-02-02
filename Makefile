@@ -2,6 +2,7 @@ CFLAGS		= -O2 -Wall -DACPI_APM
 BINS		= sleepd sleepctl
 PREFIX		= /
 INSTALL_PROGRAM	= install
+USE_HAL		= 1
 
 # DEB_BUILD_OPTIONS suport, to control binary stripping.
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
@@ -13,10 +14,21 @@ ifneq (,$(findstring debug,$(DEB_BUILD_OPTIONS)))
 CFLAGS += -g
 endif
 
+OBJS=sleepd.o acpi.o
+LIBS=-lapm
+
 all: $(BINS)
 
-sleepd: sleepd.o acpi.o
-	$(CC) -o sleepd sleepd.o acpi.o -lapm
+ifdef USE_HAL
+LIBS+=$(shell pkg-config --libs hal)
+OBJS+=simplehal.o
+CFLAGS+=-DHAL
+simplehal.o: simplehal.c
+	$(CC) $(CFLAGS) $(shell pkg-config --cflags hal) -c simplehal.c -o simplehal.o
+endif
+
+sleepd: $(OBJS)
+	$(CC) -o sleepd $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(BINS) *.o

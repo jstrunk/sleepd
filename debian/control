@@ -1,7 +1,7 @@
 Source: sleepd
 Section: admin
 Priority: optional
-Build-Depends: debhelper (>= 5.0.26), libapm-dev, dpkg-dev (>= 1.9.0)
+Build-Depends: debhelper (>= 5.0.26), libapm-dev, dpkg-dev (>= 1.9.0), libhal-dev
 Maintainer: Joey Hess <joeyh@debian.org>
 Standards-Version: 3.7.2
 Vcs-Git: git://git.kitenet.net/sleepd
@@ -18,5 +18,5 @@ Description: puts an inactive or low battery laptop to sleep
  This is a daemon to put a laptop to sleep if it is not being used or
  if the battery is low.
  .
- It supports both APM and ACPI, although in both cases external programs
- must be used to actually put the system to sleep.
+ It supports HAL, APM, and ACPI, although external programs must be used
+ to actually put the system to sleep.

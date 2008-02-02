@@ -1,7 +1,7 @@
 /*
  * forced apm sleep daemon
  *
- * Copyright 2000-2006 Joey Hess <joeyh@kitenet.net> under the terms of the
+ * Copyright 2000-2008 Joey Hess <joeyh@kitenet.net> under the terms of the
  * GNU GPL.
  */
 
@@ -19,6 +19,9 @@
 #include <fcntl.h>
 #include <apm.h>
 #include "acpi.h"
+#ifdef HAL
+#include "simplehal.h"
+#endif
 #include <signal.h>
 #include "sleepd.h"
 
@@ -35,6 +38,9 @@ int have_irqs=0;
 int sleep_time = DEFAULT_SLEEP_TIME;
 int no_sleep=0;
 signed int min_batt=-1;
+#ifdef HAL
+int use_simplehal = 0;
+#endif
 int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 
@@ -181,6 +187,11 @@ void main_loop (void) {
 		if (use_acpi) {
 			acpi_read(1, &ai);
 		}
+#ifdef HAL
+		else if (use_simplehal) {
+			acpi_read(1, &ai);
+		}
+#endif
 		else {
 			apm_read(&ai);
 		}
@@ -319,8 +330,11 @@ int main (int argc, char **argv) {
 		if (acpi_supported()) {
 			use_acpi=1;
 		}
+		else if (simplehal_supported()) {
+			use_simplehal=1;
+		}
 		else {
-			fprintf(stderr, "sleepd: apm/acpi support not present in kernel\n");
+			fprintf(stderr, "sleepd: no APM, ACPI, or HAL support detected\n");
 			exit(1);
 		}
 	}
