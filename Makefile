@@ -28,7 +28,7 @@ simplehal.o: simplehal.c
 endif
 
 sleepd: $(OBJS)
-	$(CC) -o sleepd $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o sleepd $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(BINS) *.o
