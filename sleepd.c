@@ -327,11 +327,17 @@ int main (int argc, char **argv) {
 	}
 	
 	if (apm_exists() != 0) {
+#ifdef HAL
+		/* this test must come before the acpi_supported test,
+		 * since that test will succeed even if acpi provides no
+		 * useful information */
+		if (simplehal_supported()) {
+			use_simplehal=1;
+		}
+		else
+#endif
 		if (acpi_supported()) {
 			use_acpi=1;
-		}
-		else if (simplehal_supported()) {
-			use_simplehal=1;
 		}
 		else {
 			fprintf(stderr, "sleepd: no APM, ACPI, or HAL support detected\n");

@@ -1,4 +1,4 @@
-sleepd (1.3.17) UNRELEASED; urgency=low
+sleepd (1.4) unstable; urgency=low
 
   * Only register the init script to stop sleepd at runlevel 1. The general
     process killer will handle killing it cleanly in runlevels 0 and 6.
@@ -10,7 +10,7 @@ sleepd (1.3.17) UNRELEASED; urgency=low
     (APM, ACPI, etc) is still present, but to use new interfaces such
     2.6.24's /sys/class/power_adapter, you'll have to have dbus and hal.
 
- -- Joey Hess <joeyh@debian.org>  Tue, 01 Jan 2008 21:55:27 -0500
+ -- Joey Hess <joeyh@debian.org>  Fri, 01 Feb 2008 21:36:11 -0500
 
 sleepd (1.3.16) unstable; urgency=low
 
