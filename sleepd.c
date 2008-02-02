@@ -189,7 +189,7 @@ void main_loop (void) {
 		}
 #ifdef HAL
 		else if (use_simplehal) {
-			acpi_read(1, &ai);
+			simplehal_read(1, &ai);
 		}
 #endif
 		else {
