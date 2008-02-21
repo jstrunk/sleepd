@@ -1,11 +1,11 @@
-sleepd (1.6) UNRELEASED; urgency=low
+sleepd (1.6) unstable; urgency=low
 
   * Use hibernate as the default sleep command when using hal, same as for
     raw acpi.
-  * Make init script depend on dbus, to avoid sleepd getting confused 
+  * Make init script depend on dbus, to avoid sleepd getting confused
     if dbus is stopped.
 
- -- Joey Hess <joeyh@debian.org>  Wed, 20 Feb 2008 23:34:33 -0500
+ -- Joey Hess <joeyh@debian.org>  Thu, 21 Feb 2008 01:03:51 -0500
 
 sleepd (1.5) unstable; urgency=low
 
