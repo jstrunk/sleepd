@@ -16,66 +16,7 @@ int num_batteries = 0;
 char **ac_adapters = NULL;
 char **batteries = NULL;
 
-signed int get_hal_int (const char *udi, const char *key, int optional) {
-	int ret;
-	DBusError error;
-
-	dbus_error_init(&error);
-	ret = libhal_device_get_property_int (hal_ctx, udi, key, &error);
-	
-	if (dbus_error_is_set (&error)) {
-		if (! optional)
-			fprintf(stderr, "error: libhal_device_get_property_int: %s: %s\n",
-				 error.name, error.message);
-		dbus_error_free (&error);
-		return -1;
-	}
-	return ret;
-}
-
-signed int get_hal_bool (const char *udi, const char *key, int optional) {
-	int ret;
-	DBusError error;
-
-	dbus_error_init(&error);
-	ret = libhal_device_get_property_bool (hal_ctx, udi, key, &error);
-	
-	if (dbus_error_is_set (&error)) {
-		if (! optional)
-			fprintf(stderr, "error: libhal_device_get_property_int: %s: %s\n",
-				 error.name, error.message);
-		dbus_error_free (&error);
-		return -1;
-	}
-	return ret;
-}
-
-void find_devices (void) {
-	DBusError error;
-
-	dbus_error_init(&error);
-
-	if (ac_adapters)
-		libhal_free_string_array(ac_adapters);
-	ac_adapters = libhal_find_device_by_capability(hal_ctx, "ac_adapter",
-		&num_ac_adapters, &error);
-	if (dbus_error_is_set (&error)) {
-		fprintf (stderr, "error: %s: %s\n", error.name, error.message);
-		LIBHAL_FREE_DBUS_ERROR (&error);
-	}
-
-	if (batteries)
-		libhal_free_string_array(batteries);
-	batteries = libhal_find_device_by_capability(hal_ctx, "battery",
-		&num_batteries, &error);
-	if (dbus_error_is_set (&error)) {
-		fprintf (stderr, "error: %s: %s\n", error.name, error.message);
-		LIBHAL_FREE_DBUS_ERROR (&error);
-	}
-}
-
-
-int simplehal_supported (void) {
+int connect_hal (void) {
 	DBusError error;
 	DBusConnection *conn;
 
@@ -108,9 +49,95 @@ int simplehal_supported (void) {
 		return 0;
 	}
 
-	find_devices();
-
 	return 1;
+}
+
+signed int get_hal_int (const char *udi, const char *key, int optional) {
+	int ret;
+	DBusError error;
+	
+	dbus_error_init(&error);
+
+	for (;;) {
+		ret = libhal_device_get_property_int (hal_ctx, udi, key, &error);
+	
+		if (! dbus_error_is_set (&error)) {
+			return ret;
+		}
+		else {
+			if (strcmp(error.name, "org.freedesktop.dbus.error.disconnected") == 0 &&
+			    connect_hal()) {
+				continue; /* retry */
+			}
+			else if (! optional) {
+				fprintf(stderr, "error: libhal_device_get_property_int: %s: %s\n",
+					 error.name, error.message);
+			}
+			dbus_error_free (&error);
+			return -1;
+		}
+	}
+}
+
+signed int get_hal_bool (const char *udi, const char *key, int optional) {
+	int ret;
+	DBusError error;
+	
+	dbus_error_init(&error);
+
+	for (;;) {
+		ret = libhal_device_get_property_bool (hal_ctx, udi, key, &error);
+	
+		if (! dbus_error_is_set (&error)) {
+			return ret;
+		}
+		else {
+			if (strcmp(error.name, "org.freedesktop.dbus.error.disconnected") == 0 &&
+			    connect_hal()) {
+				continue; /* retry */
+			}
+			else if (! optional) {
+				fprintf(stderr, "error: libhal_device_get_property_int: %s: %s\n",
+					 error.name, error.message);
+			}
+			dbus_error_free (&error);
+			return -1;
+		}
+	}
+}
+
+void find_devices (void) {
+	DBusError error;
+
+	dbus_error_init(&error);
+
+	if (ac_adapters)
+		libhal_free_string_array(ac_adapters);
+	ac_adapters = libhal_find_device_by_capability(hal_ctx, "ac_adapter",
+		&num_ac_adapters, &error);
+	if (dbus_error_is_set (&error)) {
+		fprintf (stderr, "error: %s: %s\n", error.name, error.message);
+		LIBHAL_FREE_DBUS_ERROR (&error);
+	}
+
+	if (batteries)
+		libhal_free_string_array(batteries);
+	batteries = libhal_find_device_by_capability(hal_ctx, "battery",
+		&num_batteries, &error);
+	if (dbus_error_is_set (&error)) {
+		fprintf (stderr, "error: %s: %s\n", error.name, error.message);
+		LIBHAL_FREE_DBUS_ERROR (&error);
+	}
+}
+
+int simplehal_supported (void) {
+	if (! connect_hal()) {
+		return 0;
+	}
+	else {
+		find_devices();
+		return 1;
+	}
 }
 
 /* Fill the passed apm_info struct. */
@@ -163,7 +190,8 @@ int simplehal_read (int battery, apm_info *info) {
 			info->battery_status = BATTERY_STATUS_LOW;
 		}
 	}
-	else if (get_hal_bool(device, "battery.rechargeable.is_charging", 0) == 1) {
+	else if (info->ac_line_status &&
+	         get_hal_bool(device, "battery.rechargeable.is_charging", 0) == 1) {
 		info->battery_status = BATTERY_STATUS_CHARGING;
 		info->battery_flags = info->battery_flags | BATTERY_FLAGS_CHARGING;
 	}
