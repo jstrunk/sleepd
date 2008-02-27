@@ -1,9 +1,9 @@
-sleepd (1.7) UNRELEASED; urgency=low
+sleepd (1.7) unstable; urgency=low
 
   * Magic header file reordering to work around the disgusting
     linux-libc-dev/libc headers conflicts (#435700). Closes: #468070
 
- -- Joey Hess <joeyh@debian.org>  Wed, 27 Feb 2008 15:08:03 -0500
+ -- Joey Hess <joeyh@debian.org>  Wed, 27 Feb 2008 15:08:55 -0500
 
 sleepd (1.6) unstable; urgency=low
 
