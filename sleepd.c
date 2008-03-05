@@ -333,13 +333,15 @@ int main (int argc, char **argv) {
 		 * useful information */
 		if (simplehal_supported()) {
 			use_simplehal=1;
-			sleep_command=acpi_sleep_command;
+			if (! sleep_command)
+				sleep_command=acpi_sleep_command;
 		}
 		else
 #endif
 		if (acpi_supported()) {
 			use_acpi=1;
-			sleep_command=acpi_sleep_command;
+			if (! sleep_command)
+				sleep_command=acpi_sleep_command;
 		}
 		else {
 			fprintf(stderr, "sleepd: no APM, ACPI, or HAL support detected\n");

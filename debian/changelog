@@ -1,3 +1,9 @@
+sleepd (1.9) unstable; urgency=low
+
+  * Fix -s. Closes: #469408
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 04 Mar 2008 20:50:03 -0500
+
 sleepd (1.8) unstable; urgency=low
 
   * Pass KILL to killproc. Closes: #469406
