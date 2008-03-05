@@ -1,3 +1,9 @@
+sleepd (1.8) unstable; urgency=low
+
+  * Pass KILL to killproc. Closes: #469406
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 04 Mar 2008 20:20:02 -0500
+
 sleepd (1.7) unstable; urgency=low
 
   * Magic header file reordering to work around the disgusting

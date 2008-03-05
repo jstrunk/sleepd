@@ -36,7 +36,7 @@ case "$1" in
 	;;
 	stop)
 		log_daemon_msg "Stopping sleep daemon" "sleepd"
-		killproc -p /var/run/$NAME.pid $DAEMON
+		killproc -p /var/run/$NAME.pid $DAEMON KILL
 		log_end_msg $?
 	;;
 	restart|force-reload)
