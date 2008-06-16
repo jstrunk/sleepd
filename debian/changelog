@@ -1,3 +1,10 @@
+sleepd (1.10) UNRELEASED; urgency=low
+
+  * If sleepd is only being used to sleep on low battery, avoid reading
+    /proc/interrupts at all.
+
+ -- Joey Hess <joeyh@debian.org>  Mon, 16 Jun 2008 16:06:25 -0400
+
 sleepd (1.9) unstable; urgency=low
 
   * Fix -s. Closes: #469408

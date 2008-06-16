@@ -1,5 +1,5 @@
 /*
- * forced apm sleep daemon
+ * sleep daemon
  *
  * Copyright 2000-2008 Joey Hess <joeyh@kitenet.net> under the terms of the
  * GNU GPL.
@@ -131,13 +131,11 @@ void parse_command_line (int argc, char **argv) {
 		autoprobe=1;
 }
 
-/* Keep checking the interrupts. As long as there is activity, do nothing. */
 void main_loop (void) {
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
 	int activity, i, sleep_now=0, total_unused=0, do_this_one=0, probed=0;
 	int sleep_battery=0;
 	int prev_ac_line_status=0;
-	long v;
 	time_t nowtime, oldtime=0;
 	FILE *f;
 	char line[64];
@@ -146,12 +144,46 @@ void main_loop (void) {
 	
 	while (1) {
 		activity=0;
+
+		if (use_acpi) {
+			acpi_read(1, &ai);
+		}
+#ifdef HAL
+		else if (use_simplehal) {
+			simplehal_read(1, &ai);
+		}
+#endif
+		else {
+			apm_read(&ai);
+		}
+
+		if (min_batt != -1 && ai.ac_line_status != 1 && 
+		    ai.battery_percentage < min_batt) {
+			sleep_battery = 1;
+		}
+		if (sleep_battery && ! require_unused_and_battery) {
+			syslog(LOG_NOTICE, "battery level %d%% is below %d%%; forcing hibernation", ai.battery_percentage, min_batt);
+			if (system(hibernate_command) != 0)
+				syslog(LOG_ERR, "%s failed", hibernate_command);
+			/* This counts as activity; to prevent double sleeps. */
+			activity=1;
+			oldtime=0;
+			sleep_battery=0;
+		}
+	
+		/* Rest is only needed if sleeping on inactivity. */
+		if (! max_unused && ! ac_max_unused) {
+			sleep(sleep_time);
+			continue;
+		}
+
 		f=fopen(INTERRUPTS, "r");
 		if (! f) {
 			perror(INTERRUPTS);
 			exit(1);
 		}
 		while(fgets(line,sizeof(line),f)) {
+			long v;
 			if (autoprobe) {
 				/* Lowercase line. */
 				for(i=0;line[i];i++)
@@ -183,38 +215,12 @@ void main_loop (void) {
 				syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
 			}
 		}
-		
-		if (use_acpi) {
-			acpi_read(1, &ai);
-		}
-#ifdef HAL
-		else if (use_simplehal) {
-			simplehal_read(1, &ai);
-		}
-#endif
-		else {
-			apm_read(&ai);
-		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
 			/* AC plug/unplug counts as activity. */
 			activity=1;
 		}
 		prev_ac_line_status=ai.ac_line_status;
-		
-		if (min_batt != -1 && ai.ac_line_status != 1 && 
-		    ai.battery_percentage < min_batt) {
-			sleep_battery = 1;
-		}
-		if (sleep_battery && ! require_unused_and_battery) {
-			syslog(LOG_NOTICE, "battery level %d%% is below %d%%; forcing hibernation", ai.battery_percentage, min_batt);
-			if (system(hibernate_command) != 0)
-				syslog(LOG_ERR, "%s failed", hibernate_command);
-			/* This counts as activity; to prevent double sleeps. */
-			activity=1;
-			oldtime=0;
-			sleep_battery=0;
-		}
 		
 		if (activity) {
 			total_unused = 0;
