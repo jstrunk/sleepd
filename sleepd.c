@@ -158,7 +158,8 @@ void main_loop (void) {
 		}
 
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
-		    ai.battery_percentage < min_batt) {
+		    ai.battery_percentage < min_batt &&
+		    ai.battery_status != BATTERY_STATUS_ABSENT) {
 			sleep_battery = 1;
 		}
 		if (sleep_battery && ! require_unused_and_battery) {
