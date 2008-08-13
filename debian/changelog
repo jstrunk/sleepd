@@ -2,8 +2,9 @@ sleepd (1.11) UNRELEASED; urgency=low
 
   * Tweak acpi/hal backend chosing logic to deal with being started before
     hal on a system without acpi power info. Closes: #494912
-  * Make init script depend on hal.
-  * Move init script sequence number to after hal for new installs.
+  * Make init script depend on hal and move init script sequence number to
+    after hal for new installs. Both changes avoid warning message in syslog,
+    but the change above makes it ok if old installs don't follow suite.
 
  -- Joey Hess <joeyh@debian.org>  Tue, 12 Aug 2008 22:47:52 -0400
 
