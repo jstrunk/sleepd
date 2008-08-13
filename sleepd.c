@@ -334,26 +334,39 @@ int main (int argc, char **argv) {
 	}
 	
 	if (apm_exists() != 0) {
-#ifdef HAL
-		/* this test must come before the acpi_supported test,
-		 * since that test will succeed even if acpi provides no
-		 * useful information */
-		if (simplehal_supported()) {
-			use_simplehal=1;
-			if (! sleep_command)
-				sleep_command=acpi_sleep_command;
-		}
-		else
-#endif
-		if (acpi_supported()) {
+		if (! sleep_command)
+			sleep_command=acpi_sleep_command;
+
+		/* Chosing between hal and acpi backends is tricky,
+		 * because acpi may report no batteries due to the battery
+		 * being absent (but inserted later), or due to battery
+		 * info no longer being available by acpi in new kernels.
+		 * Meanwhile, hal may fail if hald is not yet
+		 * running, but might work later.
+		 *
+		 * The strategy used is to check if acpi reports an AC
+		 * adapter, or a battery. If it reports neither, we assume
+		 * that the kernel no longer supports acpi power info, and
+		 * use hal.
+		 */
+		if (acpi_supported() &&
+		    (acpi_ac_count > 0 || acpi_batt_count > 0)) {
 			use_acpi=1;
-			if (! sleep_command)
-				sleep_command=acpi_sleep_command;
+		}
+#ifdef HAL
+		else if (simplehal_supported()) {
+			use_simplehal=1;
 		}
 		else {
-			fprintf(stderr, "sleepd: no APM, ACPI, or HAL support detected\n");
+			syslog(LOG_NOTICE, "failed to connect to hal on startup, but will try to use it anyway");
+			use_simplehal=1;
+		}
+#else
+		else {
+			fprintf(stderr, "sleepd: no APM or ACPI support detected\n");
 			exit(1);
 		}
+#endif
 	}
 	if (! sleep_command) {
 		sleep_command=apm_sleep_command;
