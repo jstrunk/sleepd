@@ -1,10 +1,10 @@
-sleepd (1.12) UNRELEASED; urgency=low
+sleepd (1.12) unstable; urgency=low
 
   * Write status back out to control file when resume from manual sleep causes
     sleeping to be re-enabled, so that sleepctl will see the correct status
     in this case. Closes: #501708
 
- -- Joey Hess <joeyh@debian.org>  Thu, 09 Oct 2008 16:13:19 -0400
+ -- Joey Hess <joeyh@debian.org>  Thu, 09 Oct 2008 16:22:40 -0400
 
 sleepd (1.11) unstable; urgency=low
 

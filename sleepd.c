@@ -131,6 +131,32 @@ void parse_command_line (int argc, char **argv) {
 		autoprobe=1;
 }
 
+void loadcontrol (int signum) {
+	int f;
+	char buf[8];
+	
+	if (((f=open(CONTROL_FILE, O_RDONLY)) == -1) ||
+            (flock(f, LOCK_SH) == -1) ||
+	    (read(f, buf, 7) == -1))
+		return;
+        no_sleep=atoi(buf);
+	close(f);
+
+	signal(SIGHUP, loadcontrol);
+}
+
+void writecontrol (int value) {
+	int f;
+	char buf[10];
+
+	if ((f=open(CONTROL_FILE, O_WRONLY | O_CREAT, 0644)) == -1) {
+		perror(CONTROL_FILE);
+	}
+	snprintf(buf, 9, "%i\n", value);
+	write(f, buf, strlen(buf));
+	close(f);
+}
+
 void main_loop (void) {
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
 	int activity, i, sleep_now=0, total_unused=0, do_this_one=0, probed=0;
@@ -278,33 +304,6 @@ void main_loop (void) {
 		}
 		oldtime=nowtime;
 	}
-}
-
-void loadcontrol (int signum) {
-	int f;
-	char buf[8];
-	
-	if (((f=open(CONTROL_FILE, O_RDONLY)) == -1) ||
-            (flock(f, LOCK_SH) == -1) ||
-	    (read(f, buf, 7) == -1))
-		return;
-        no_sleep=atoi(buf);
-	close(f);
-
-	signal(SIGHUP, loadcontrol);
-}
-
-void writecontrol (int value) {
-	int f;
-	char buf[10];
-	pid_t pid;
-
-	if ((f=open(CONTROL_FILE, O_WRONLY | O_CREAT, 0644)) == -1) {
-		perror(CONTROL_FILE);
-	}
-	snprintf(buf, 9, "%i\n", value);
-	write(f, buf, strlen(buf));
-	close(f);
 }
 
 void cleanup (int signum) {
