@@ -270,6 +270,7 @@ void main_loop (void) {
 		/* The 1 is a necessary fudge factor. */
 		if (oldtime && nowtime - sleep_time > oldtime + 1) {
 			no_sleep=0; /* reset, since they must have put it to sleep */
+			writecontrol(no_sleep);
 			syslog(LOG_NOTICE,
 					"%i sec sleep; resetting timer",
 					(int)(nowtime - oldtime));
@@ -291,6 +292,19 @@ void loadcontrol (int signum) {
 	close(f);
 
 	signal(SIGHUP, loadcontrol);
+}
+
+void writecontrol (int value) {
+	int f;
+	char buf[10];
+	pid_t pid;
+
+	if ((f=open(CONTROL_FILE, O_WRONLY | O_CREAT, 0644)) == -1) {
+		perror(CONTROL_FILE);
+	}
+	snprintf(buf, 9, "%i\n", value);
+	write(f, buf, strlen(buf));
+	close(f);
 }
 
 void cleanup (int signum) {

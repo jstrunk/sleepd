@@ -1,3 +1,11 @@
+sleepd (1.12) UNRELEASED; urgency=low
+
+  * Write status back out to control file when resume from manual sleep causes
+    sleeping to be re-enabled, so that sleepctl will see the correct status
+    in this case. Closes: #501708
+
+ -- Joey Hess <joeyh@debian.org>  Thu, 09 Oct 2008 16:13:19 -0400
+
 sleepd (1.11) unstable; urgency=low
 
   * Tweak acpi/hal backend chosing logic to deal with being started before
