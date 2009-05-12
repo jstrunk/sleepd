@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <apm.h>
+#include <utmp.h>
 #include "acpi.h"
 #ifdef HAL
 #include "simplehal.h"
@@ -44,9 +45,10 @@ int use_simplehal = 0;
 int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 double max_loadavg = 0;
+int use_utmp=0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-l n] [-a] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-l n] [-w] [-a] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -56,6 +58,7 @@ void parse_command_line (int argc, char **argv) {
 		{"unused", 1, NULL, 'u'},
 		{"ac-unused", 1, NULL, 'U'},
 		{"load", 1, NULL, 'l'},
+		{"utmp", 1, NULL, 'w'},
 		{"irq", 1, NULL, 'i'},
 		{"help", 0, NULL, 'h'},
 		{"sleep-command", 1, NULL, 's'},
@@ -90,6 +93,9 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'l':
 				max_loadavg=atof(optarg);
+				break;
+			case 'w':
+				use_utmp=1;
 				break;
 			case 'i':
 				i = atoi(optarg);
@@ -160,6 +166,15 @@ void writecontrol (int value) {
 	snprintf(buf, 9, "%i\n", value);
 	write(f, buf, strlen(buf));
 	close(f);
+}
+
+/**** stat the device file to get an idle time */
+// Copied from w.c in procps by Charles Blake
+int idletime(const char *tty) {
+  struct stat sbuf;
+  if (stat(tty, &sbuf) != 0)
+    return 0;
+  return (int)((long)time(NULL) - (long)sbuf.st_atime);
 }
 
 void main_loop (void) {
@@ -255,6 +270,29 @@ void main_loop (void) {
 				(loadavg[0] >= max_loadavg)) {
 			/* If the load average is too high */
 			activity = 1;
+		}
+
+		if (use_utmp == 1) {
+      /* replace total_unused with the minimum of total_unused and the
+       * shortest utmp idle time. */
+		  typedef struct utmp utmp_t;
+			utmp_t *u;
+      int min_idle=2*max_unused;
+			utmpname(UTMP_FILE);
+			setutent();
+			while ((u=getutent())) {
+        /* get tty. From w.c in procps by Charles Blake. */
+			  char tty[5 + sizeof u->ut_line + 1] = "/dev/";
+        for (i=0; i < sizeof u->ut_line; i++) /* clean up tty if garbled */
+          if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/'))
+            tty[i+5] = u->ut_line[i];
+          else
+            tty[i+5] = '\0';
+        int cur_idle=idletime(tty);
+				min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
+			}
+      //The shortest idle time is the real idle time
+      total_unused = (min_idle < total_unused) ? min_idle : total_unused;
 		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
