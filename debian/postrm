@@ -1,0 +1,5 @@
+#!/bin/sh -e
+#DEBHELPER#
+if [ "$1" = purge ]; then
+	rm -f /var/run/sleepd.ctl
+fi

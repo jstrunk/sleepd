@@ -1,0 +1,44 @@
+#!/usr/bin/make -f
+
+build: build-stamp
+build-stamp:
+	dh_testdir
+	$(MAKE)
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp
+	$(MAKE) clean
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	make install PREFIX=debian/sleepd
+
+binary-indep: build install
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installdocs TODO
+	dh_installinit -- start 30 2 3 4 5 . stop 80 1 .
+	dh_installchangelogs
+	dh_strip
+	dh_compress
+	dh_fixperms -X sleepctl
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+# Not intended for use by anyone except the author.
+announcedir:
+	@echo ${HOME}/src/joeywiki/code/sleepd/news
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install
