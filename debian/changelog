@@ -1,3 +1,11 @@
+sleepd (1.13) UNRELEASED; urgency=low
+
+  * Avoid crash by ignoring high irqs greater than 254
+    (assumption is these will not be irqs we care about).
+    Thanks, Jeff Strunk.
+
+ -- Joey Hess <joeyh@debian.org>  Tue, 12 May 2009 14:23:37 -0400
+
 sleepd (1.12) unstable; urgency=low
 
   * Write status back out to control file when resume from manual sleep causes
