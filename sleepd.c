@@ -43,9 +43,10 @@ int use_simplehal = 0;
 #endif
 int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
+double max_loadavg = 0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-a] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-l n] [-a] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -54,6 +55,7 @@ void parse_command_line (int argc, char **argv) {
 		{"nodaemon", 0, NULL, 'n'},
 		{"unused", 1, NULL, 'u'},
 		{"ac-unused", 1, NULL, 'U'},
+		{"load", 1, NULL, 'l'},
 		{"irq", 1, NULL, 'i'},
 		{"help", 0, NULL, 'h'},
 		{"sleep-command", 1, NULL, 's'},
@@ -69,7 +71,7 @@ void parse_command_line (int argc, char **argv) {
 	int i;
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:d:nu:U:wi:hac:b:A", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nu:U:l:wi:hac:b:A", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -85,6 +87,9 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'U':
 				ac_max_unused=atoi(optarg);
+				break;
+			case 'l':
+				max_loadavg=atof(optarg);
 				break;
 			case 'i':
 				i = atoi(optarg);
@@ -167,6 +172,7 @@ void main_loop (void) {
 	char line[64];
 	apm_info ai;
 	int no_dev_warned=1;
+  double loadavg[1];
 	
 	while (1) {
 		activity=0;
@@ -242,6 +248,13 @@ void main_loop (void) {
 				no_dev_warned=1;
 				syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
 			}
+		}
+
+		if ((max_loadavg != 0) &&
+				(getloadavg(loadavg, 1) == 1) &&
+				(loadavg[0] >= max_loadavg)) {
+			/* If the load average is too high */
+			activity = 1;
 		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
