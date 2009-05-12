@@ -1,3 +1,9 @@
+sleepd (1.12-1~jstrunk1) jaunty; urgency=low
+
+  * fix high IRQ segfault. Closes: LP#371463
+
+ -- Jeff Strunk (UTM) <jstrunk@math.utexas.edu>  Tue, 12 May 2009 09:12:34 -0500
+
 sleepd (1.12) unstable; urgency=low
 
   * Write status back out to control file when resume from manual sleep causes
