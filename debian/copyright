@@ -1,6 +1,5 @@
-This is sleepd, a Debian-native package. Its home page is
-http://kitenet.net/~joey/code/sleepd/
-
-sleepd is copyright 2000-2008 by Joey Hess <joeyh@debian.org> under the
-terms of the GNU GPL, version 2 or higher. On Debian systems, the full text
-of the GPL is in /usr/share/common-licenses/GPL
+Files: *
+Copyright: © 2000-2009 by Joey Hess <joey@kitenet.net>
+License: GPL-2+
+ The full text of the GPL is distributed as GPL in sleepd's source,
+ and is distributed in /usr/share/common-licenses/GPL-2 on Debian systems.
