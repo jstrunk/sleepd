@@ -1,4 +1,4 @@
-sleepd (1.12~jstrunk1) jaunty; urgency=low
+sleepd (1.12-1~jstrunk1) jaunty; urgency=low
 
   * fix high IRQ segfault. Closes: LP#371463
 
