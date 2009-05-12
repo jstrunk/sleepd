@@ -229,6 +229,7 @@ void main_loop (void) {
 				}
 			}
 			if (sscanf(line,"%d: %ld",&i, &v) == 2 && 
+          i < MAX_IRQS &&
 			    (do_this_one || irqs[i]) && irq_count[i] != v) {
 				activity=1;
 				irq_count[i] = v;
