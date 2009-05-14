@@ -25,14 +25,7 @@
 
 #include <linux/input.h>
 
-#define MAX_CHANNELS    64
-static struct
-{
-  int channels[MAX_CHANNELS];
-  pthread_t tid[MAX_CHANNELS];
-  int timeout;
-  int *activity;
-} eventData;
+#include "eventmonitor.h"
 
 void initializeIE(void) 
 {
