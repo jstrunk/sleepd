@@ -258,8 +258,8 @@ void main_loop (void) {
 					do_this_one=0;
 				}
 			}
-			if (sscanf(line,"%d: %ld",&i, &v) == 2 && 
-          i < MAX_IRQS &&
+			if (sscanf(line,"%d: %ld",&i, &v) == 2 &&
+			    i < MAX_IRQS &&
 			    (do_this_one || irqs[i]) && irq_count[i] != v) {
 				activity=1;
 				irq_count[i] = v;
@@ -425,7 +425,7 @@ int main (int argc, char **argv) {
 	if (! hibernate_command) {
 		hibernate_command=sleep_command;
 	}
-
+	
 	main_loop();
 	
 	return(0); // never reached
