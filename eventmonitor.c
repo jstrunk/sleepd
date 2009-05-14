@@ -1,5 +1,8 @@
 // Description:
+// polls /dev/input/event* for any update.
 //
+// Modified by Jeff Strunk
+// Originally EventMonitor.c from keywatcher
 // Copyright (C) 2002-2005 Frank Becker
 //
 // This program is free software; you can redistribute it and/or modify it under
@@ -13,6 +16,7 @@
 //
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -20,92 +24,119 @@
 #include <sys/types.h>
 
 #include <linux/input.h>
-#include <defines.h>
 
 #define MAX_CHANNELS    64
-static int eventChannels[MAX_CHANNELS];
-fd_set eventWatch;
+static struct
+{
+  int channels[MAX_CHANNELS];
+  pthread_t tid[MAX_CHANNELS];
+  int timeout;
+  int *activity;
+} eventData;
+
 void initializeIE(void) 
 {
+    int j=0;
+    int tmpfd;
     int i;
     for( i=0; i<MAX_CHANNELS; i++)
     {
-	char devName[128];
-	snprintf( devName, 127, "/dev/input/event%d",i);
-	eventChannels[i] = open(devName, O_RDONLY);
-	if( eventChannels[i] == -1)
-	{
-	    break;
-	}
-	printf("Adding %s %d\n", devName, eventChannels[i]);
+      char devName[128];
+      snprintf( devName, 127, "/dev/input/event%d",i);
+      tmpfd = open(devName, O_RDONLY);
+      if( tmpfd != -1)
+      {
+        eventData.channels[j] = tmpfd;
+        j++;
+      }
     }
+    eventData.channels[j] = -1;
 }
 
 void cleanupIE(void) 
 {
     int i;
-    for( i=0; eventChannels[i] != -1; i++)
+    for( i=0; eventData.channels[i] != -1; i++)
     {
-	close( eventChannels[i]);
+  close( eventData.channels[i]);
     }
 }
 
-int waitForInputEvent(void) 
+void *waitForInputEvent(void *threadid) 
 {
+    int tid = (int)threadid;
     struct timeval tv;
     int retval;
+    int *activity = eventData.activity;
+    fd_set eventWatch;
+
     int i;
-    int maxfd = 0;
-    /* Wait up to five seconds. */
-    tv.tv_sec = 5;
-    tv.tv_usec = 0;
-
-    FD_ZERO(&eventWatch);
-    maxfd = 0;
-    for( i=0; eventChannels[i] != -1; i++)
+    for (i=0; i < eventData.timeout; i++)
     {
-	FD_SET( eventChannels[i], &eventWatch);
-	if( eventChannels[i] > maxfd) maxfd = eventChannels[i];
+      if (*activity == 0)
+      {
+        FD_ZERO(&eventWatch);
+        FD_SET( eventData.channels[tid], &eventWatch);
+
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        retval = select(eventData.channels[tid] + 1, &eventWatch, NULL, NULL, &tv);
+
+        if( retval > 0 )
+        {
+          *activity = 1;
+          break;
+        }
+      } else
+      {
+        break;
+      }
     }
-    maxfd++;
-
-    retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
-
-    if( retval)
-    {
-	for( i=0; eventChannels[i] != -1; i++)
-	{
-	    if( FD_ISSET( eventChannels[i], &eventWatch))
-	    {
-		struct input_event event;
-		int s;
-		s = read( eventChannels[i], &event, sizeof(event));
-		printf("Event from channel %d\n", i);
-		printf( "Read %d, type=%d, code=%d, val=%d\n",
-			s, event.type, event.code, event.value);
-		return event.code;
-	    }
-	}
-    }
-#if 0
-    else
-	printf("No events...\n");
-#endif
-
-    return -1;
+    pthread_exit(NULL);
 }
 
-int main( /*int argc, char *argv[]*/)
+void *eventMonitor()
 {
-    printf("keyMonitor - Copyright (C) 2005 by Frank Becker\n");
-    printf("keyMonitor %s built %s %s\n", VERSION ,__DATE__, __TIME__);
-
+    int rc;
     initializeIE();
-    while(1)
+    int *activity = eventData.activity;
+    int event=0;
+    while(eventData.channels[event] != -1)
     {
-	waitForInputEvent();
+      rc = pthread_create(&eventData.tid[event], NULL, waitForInputEvent, (void *) event);
+      event++;
+    }
+    
+    sleep(eventData.timeout);
+
+    event=0;
+    while(eventData.channels[event] != -1)
+    {
+      rc = pthread_join(eventData.tid[event], NULL);
+      event++;
     }
     cleanupIE();
-    
-    return 0;
+    pthread_exit(NULL);
+}
+
+int main()
+{
+  int activity;
+  //example of intended use
+  pthread_t mainthread;
+  //every thread needs to see and be able to modify activity
+  eventData.activity = &activity;
+  eventData.timeout = 10;
+  //start loops here
+  activity = 0;
+  //start the eventMonitor
+  pthread_create(&mainthread, NULL, eventMonitor, NULL);
+  // Do other stuff here.
+  // When other stuff is complete, don't run sleep.
+  // eventMonitor sleeps for timeout, and pthread_join blocks until it exits.
+  pthread_join(mainthread,NULL);
+  printf("activity=%d\n", activity);
+  //end loops here
+
+  return 0;
 }
