@@ -29,16 +29,18 @@
 #include <signal.h>
 #include "sleepd.h"
 
+#ifndef EM
 int irqs[MAX_IRQS]; /* irqs to examine have a value of 1 */
+int autoprobe=1;
+int have_irqs=0;
+#endif
 int max_unused=10 * 60; /* in seconds */
 int ac_max_unused=0;
 char *apm_sleep_command="apm -s";
 char *acpi_sleep_command="hibernate --force";
 char *sleep_command=NULL;
 char *hibernate_command=NULL;
-int autoprobe=1;
 int daemonize=1;
-int have_irqs=0;
 int sleep_time = DEFAULT_SLEEP_TIME;
 int no_sleep=0;
 signed int min_batt=-1;
@@ -58,7 +60,9 @@ void parse_command_line (int argc, char **argv) {
 		{"nodaemon", 0, NULL, 'n'},
 		{"unused", 1, NULL, 'u'},
 		{"ac-unused", 1, NULL, 'U'},
+#ifndef EM
 		{"irq", 1, NULL, 'i'},
+#endif
 		{"help", 0, NULL, 'h'},
 		{"sleep-command", 1, NULL, 's'},
 		{"hibernate-command", 1, NULL, 'd'},
@@ -68,12 +72,18 @@ void parse_command_line (int argc, char **argv) {
 		{"and", 0, NULL, 'A'},
 		{0, 0, 0, 0}
 	};
+#ifndef EM
 	int force_autoprobe=0;
-	int c=0;
 	int i;
+#endif
+	int c=0;
 
 	while (c != -1) {
+#ifdef EM
+		c=getopt_long(argc,argv, "s:d:nu:U:whac:b:A", long_options, NULL);
+#else
 		c=getopt_long(argc,argv, "s:d:nu:U:wi:hac:b:A", long_options, NULL);
+#endif
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -90,6 +100,7 @@ void parse_command_line (int argc, char **argv) {
 			case 'U':
 				ac_max_unused=atoi(optarg);
 				break;
+#ifndef EM
 			case 'i':
 				i = atoi(optarg);
 				if ((i < 0) || (i >= MAX_IRQS)) {
@@ -100,12 +111,13 @@ void parse_command_line (int argc, char **argv) {
 				autoprobe=0;
 				have_irqs=1;
 				break;
+			case 'a':
+				force_autoprobe=1;
+				break;
+#endif
 			case 'h':
 				usage();
 				exit(0);
-				break;
-			case 'a':
-				force_autoprobe=1;
 				break;
 			case 'c':
 				sleep_time=atoi(optarg);
@@ -131,8 +143,10 @@ void parse_command_line (int argc, char **argv) {
 		exit(1);
 	}
 
+#ifndef EM
 	if (force_autoprobe)
 		autoprobe=1;
+#endif
 }
 
 void loadcontrol (int signum) {
@@ -162,15 +176,18 @@ void writecontrol (int value) {
 }
 
 void main_loop (void) {
+#ifndef EM
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
-	int activity, i, sleep_now=0, total_unused=0, do_this_one=0, probed=0;
+  int i, do_this_one=0, probed=0;
+	FILE *f;
+	char line[64];
+	int no_dev_warned=1;
+#endif
+	int activity, sleep_now=0, total_unused=0;
 	int sleep_battery=0;
 	int prev_ac_line_status=0;
 	time_t nowtime, oldtime=0;
-	FILE *f;
-	char line[64];
 	apm_info ai;
-	int no_dev_warned=1;
 #ifdef EM
   pthread_t emthread;
   eventData.activity = &activity;
@@ -216,6 +233,7 @@ void main_loop (void) {
 			continue;
 		}
 
+#ifndef EM
 		f=fopen(INTERRUPTS, "r");
 		if (! f) {
 			perror(INTERRUPTS);
@@ -255,6 +273,7 @@ void main_loop (void) {
 				syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
 			}
 		}
+#endif
 
 		if (ai.ac_line_status != prev_ac_line_status) {
 			/* AC plug/unplug counts as activity. */
@@ -342,11 +361,13 @@ int main (int argc, char **argv) {
 	/* And a handler for SIGHUP, to reaload control file. */
 	signal(SIGHUP, loadcontrol);
 	loadcontrol(0);
-	
+
+#ifndef EM
 	if (! have_irqs && ! autoprobe) {
 		fprintf(stderr, "No irqs specified.\n");
 		exit(1);
 	}
+#endif
 
 	if (daemonize) {
 		if (daemon(0,0) == -1) {
