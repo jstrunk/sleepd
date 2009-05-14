@@ -22,6 +22,10 @@
 #ifdef HAL
 #include "simplehal.h"
 #endif
+#ifdef EM
+#include <pthread.h>
+#include "eventmonitor.h"
+#endif
 #include <signal.h>
 #include "sleepd.h"
 
@@ -167,10 +171,18 @@ void main_loop (void) {
 	char line[64];
 	apm_info ai;
 	int no_dev_warned=1;
-	
+#ifdef EM
+  pthread_t emthread;
+  eventData.activity = &activity;
+  eventData.timeout = sleep_time;
+#endif
+
 	while (1) {
 		activity=0;
 
+#ifdef EM
+    pthread_create(&emthread, NULL, eventMonitor, NULL);
+#endif
 		if (use_acpi) {
 			acpi_read(1, &ai);
 		}
@@ -249,7 +261,13 @@ void main_loop (void) {
 			activity=1;
 		}
 		prev_ac_line_status=ai.ac_line_status;
-		
+
+#ifdef EM
+    pthread_join(emthread, NULL);
+#else
+    sleep(sleep_time);
+#endif
+
 		if (activity) {
 			total_unused = 0;
 		}
@@ -284,8 +302,6 @@ void main_loop (void) {
 				sleep_battery=0;
 			}
 		}
-		
-		sleep(sleep_time);
 		
 		/*
 		 * Keep track of how long it's been since we were last
@@ -388,7 +404,7 @@ int main (int argc, char **argv) {
 	if (! hibernate_command) {
 		hibernate_command=sleep_command;
 	}
-	
+
 	main_loop();
 	
 	return(0); // never reached

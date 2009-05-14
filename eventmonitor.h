@@ -7,7 +7,7 @@ struct event_data
   int *activity;
 };
 
-static struct event_data eventData;
+struct event_data eventData;
 
 extern void *eventMonitor();
 

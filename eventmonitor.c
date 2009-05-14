@@ -92,14 +92,13 @@ void *eventMonitor()
 {
     int rc;
     initializeIE();
-    int *activity = eventData.activity;
+//    int *activity = eventData.activity;
     int event=0;
     while(eventData.channels[event] != -1)
     {
       rc = pthread_create(&eventData.tid[event], NULL, waitForInputEvent, (void *) event);
       event++;
     }
-    
     sleep(eventData.timeout);
 
     event=0;
@@ -112,6 +111,7 @@ void *eventMonitor()
     pthread_exit(NULL);
 }
 
+/*
 int main()
 {
   int activity;
@@ -133,3 +133,4 @@ int main()
 
   return 0;
 }
+*/

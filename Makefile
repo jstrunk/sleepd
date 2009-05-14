@@ -3,6 +3,7 @@ BINS		= sleepd sleepctl
 PREFIX		= /
 INSTALL_PROGRAM	= install
 USE_HAL		= 1
+USE_EM		= 1
 
 # DEB_BUILD_OPTIONS suport, to control binary stripping.
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
@@ -25,6 +26,13 @@ OBJS+=simplehal.o
 CFLAGS+=-DHAL
 simplehal.o: simplehal.c
 	$(CC) $(CFLAGS) $(shell pkg-config --cflags hal) -c simplehal.c -o simplehal.o
+endif
+
+ifdef USE_EM
+OBJS+=eventmonitor.o
+CFLAGS+=-DEM -pthread
+eventmonitor.o: eventmonitor.c
+	$(CC) $(CFLAGS) -c eventmonitor.c -o eventmonitor.o
 endif
 
 sleepd: $(OBJS)
