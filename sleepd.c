@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <apm.h>
+#include <utmp.h>
 #include "acpi.h"
 #ifdef HAL
 #include "simplehal.h"
@@ -47,9 +48,11 @@ int use_simplehal = 0;
 #endif
 int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
+double max_loadavg = 0;
+int use_utmp=0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-E] [-e filename [-e filename ...]] [-a] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-E] [-e filename [-e filename ...]] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -58,6 +61,8 @@ void parse_command_line (int argc, char **argv) {
 		{"nodaemon", 0, NULL, 'n'},
 		{"unused", 1, NULL, 'u'},
 		{"ac-unused", 1, NULL, 'U'},
+		{"load", 1, NULL, 'l'},
+		{"utmp", 1, NULL, 'w'},
 		{"irq", 1, NULL, 'i'},
 		{"no-events", 1, NULL, 'E'},
 		{"event", 1, NULL, 'e'},
@@ -77,7 +82,7 @@ void parse_command_line (int argc, char **argv) {
   int result;
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:d:nu:U:wi:Ee:hac:b:A", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nu:U:l:wi:Ee:hac:b:A", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -93,6 +98,12 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'U':
 				ac_max_unused=atoi(optarg);
+				break;
+			case 'l':
+				max_loadavg=atof(optarg);
+				break;
+			case 'w':
+				use_utmp=1;
 				break;
 			case 'i':
 				i = atoi(optarg);
@@ -170,10 +181,10 @@ void loadcontrol (int signum) {
 	char buf[8];
 	
 	if (((f=open(CONTROL_FILE, O_RDONLY)) == -1) ||
-						(flock(f, LOCK_SH) == -1) ||
-			(read(f, buf, 7) == -1))
+		(flock(f, LOCK_SH) == -1) ||
+		(read(f, buf, 7) == -1))
 		return;
-				no_sleep=atoi(buf);
+	no_sleep=atoi(buf);
 	close(f);
 
 	signal(SIGHUP, loadcontrol);
@@ -191,6 +202,15 @@ void writecontrol (int value) {
 	close(f);
 }
 
+/**** stat the device file to get an idle time */
+// Copied from w.c in procps by Charles Blake
+int idletime(const char *tty) {
+  struct stat sbuf;
+  if (stat(tty, &sbuf) != 0)
+    return 0;
+  return (int)((long)time(NULL) - (long)sbuf.st_atime);
+}
+
 void main_loop (void) {
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
 	int i, do_this_one=0, probed=0;
@@ -205,6 +225,7 @@ void main_loop (void) {
 	pthread_t emthread;
 	eventData.activity = &activity;
 	eventData.timeout = sleep_time;
+	double loadavg[1];
 
 	while (1) {
 		activity=0;
@@ -288,6 +309,36 @@ void main_loop (void) {
 			}
 		}
 
+		if ((max_loadavg != 0) &&
+				(getloadavg(loadavg, 1) == 1) &&
+				(loadavg[0] >= max_loadavg)) {
+			/* If the load average is too high */
+			activity = 1;
+		}
+
+		if (use_utmp == 1) {
+      /* replace total_unused with the minimum of total_unused and the
+       * shortest utmp idle time. */
+		  typedef struct utmp utmp_t;
+			utmp_t *u;
+      int min_idle=2*max_unused;
+			utmpname(UTMP_FILE);
+			setutent();
+			while ((u=getutent())) {
+        /* get tty. From w.c in procps by Charles Blake. */
+			  char tty[5 + sizeof u->ut_line + 1] = "/dev/";
+        for (i=0; i < sizeof u->ut_line; i++) /* clean up tty if garbled */
+          if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/'))
+            tty[i+5] = u->ut_line[i];
+          else
+            tty[i+5] = '\0';
+        int cur_idle=idletime(tty);
+				min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
+			}
+      //The shortest idle time is the real idle time
+      total_unused = (min_idle < total_unused) ? min_idle : total_unused;
+		}
+
 		if (ai.ac_line_status != prev_ac_line_status) {
 			/* AC plug/unplug counts as activity. */
 			activity=1;
@@ -325,7 +376,7 @@ void main_loop (void) {
 			}
 			else if (sleep_now && ! no_sleep && sleep_battery) {
 				syslog(LOG_NOTICE, "system inactive for %ds and battery level %d%% is below %d%%; forcing hibernaton", 
-							 total_unused, ai.battery_percentage, min_batt);
+						total_unused, ai.battery_percentage, min_batt);
 				if (system(hibernate_command) != 0)
 					syslog(LOG_ERR, "%s failed", hibernate_command);
 				total_unused=0;
@@ -414,7 +465,7 @@ int main (int argc, char **argv) {
 		 * use hal.
 		 */
 		if (acpi_supported() &&
-				(acpi_ac_count > 0 || acpi_batt_count > 0)) {
+			(acpi_ac_count > 0 || acpi_batt_count > 0)) {
 			use_acpi=1;
 		}
 #ifdef HAL
