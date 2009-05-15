@@ -52,7 +52,7 @@ double max_loadavg = 0;
 int use_utmp=0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-E] [-e filename [-e filename ...]] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
