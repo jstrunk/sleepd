@@ -31,12 +31,32 @@ void initializeIE(void)
 {
 		int j=0;
 		int tmpfd;
-		int i;
-		for( i=0; i<MAX_CHANNELS; i++)
+		if (eventData.events[0] == NULL)
 		{
-			char devName[128];
-			snprintf( devName, 127, "/dev/input/event%d",i);
-			tmpfd = open(devName, O_RDONLY);
+      int i;
+			int result;
+      for( i=0; i<MAX_CHANNELS; i++)
+      {
+        char devName[128];
+        snprintf( devName, 127, "/dev/input/event%d",i);
+				result = access(devName, R_OK);
+				if (result == 0)
+				{
+					eventData.events[j] = devName;
+					j++;
+				}
+			}
+			eventData.events[j] = NULL;
+		}
+		if (eventData.events[0] == NULL)
+		{
+			fprintf(stderr,"sleepd: there are no event files to watch.\n");
+			exit(1);
+		}
+		j=0;
+		while (eventData.events[j] != NULL)
+		{
+			tmpfd = open(eventData.events[j], O_RDONLY);
 			if( tmpfd != -1)
 			{
 				eventData.channels[j] = tmpfd;

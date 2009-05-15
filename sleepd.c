@@ -22,6 +22,7 @@
 #ifdef HAL
 #include "simplehal.h"
 #endif
+#include <errno.h>
 #include <pthread.h>
 #include "eventmonitor.h"
 #include <signal.h>
@@ -48,7 +49,7 @@ int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-E] [-a] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n [-i n ..]] [-E] [-e filename [-e filename ...]] [-a] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -59,6 +60,7 @@ void parse_command_line (int argc, char **argv) {
 		{"ac-unused", 1, NULL, 'U'},
 		{"irq", 1, NULL, 'i'},
 		{"no-events", 1, NULL, 'E'},
+		{"event", 1, NULL, 'e'},
 		{"help", 0, NULL, 'h'},
 		{"sleep-command", 1, NULL, 's'},
 		{"hibernate-command", 1, NULL, 'd'},
@@ -71,6 +73,8 @@ void parse_command_line (int argc, char **argv) {
 	int force_autoprobe=0;
 	int i;
 	int c=0;
+	int event=0;
+  int result;
 
 	while (c != -1) {
 		c=getopt_long(argc,argv, "s:d:nu:U:wi:Ee:hac:b:A", long_options, NULL);
@@ -99,6 +103,26 @@ void parse_command_line (int argc, char **argv) {
 				irqs[atoi(optarg)]=1;
 				autoprobe=0;
 				have_irqs=1;
+				break;
+			case 'e':
+        result = access(optarg, R_OK);
+				switch(result) {
+					case 0:
+						eventData.events[event] = optarg;
+						use_events=1;
+						event++;
+						break;
+					case ELOOP:
+					case ENAMETOOLONG:
+					case ENOENT:
+					case ENOTDIR:
+					case EFAULT:
+						fprintf(stderr, "sleepd: event file not found: %s\n", optarg);
+						exit(1);
+					case EACCES:
+						fprintf(stderr, "sleepd: can't read %s\n", optarg);
+						exit(1);
+				}
 				break;
 			case 'E':
 			  use_events=0;
@@ -133,6 +157,9 @@ void parse_command_line (int argc, char **argv) {
 		usage();
 		exit(1);
 	}
+
+  if (use_events)
+	  eventData.events[event] = NULL;
 
 	if (force_autoprobe)
 		autoprobe=1;
