@@ -80,7 +80,7 @@ void *waitForInputEvent(void *threadid)  {
 	for (i=0; i < eventData.timeout; i++) {
 		if (*activity == 0) {
 			FD_ZERO(&eventWatch);
-			FD_SET( eventData.channels[tid], &eventWatch);
+			FD_SET (eventData.channels[tid], &eventWatch);
 
 			tv.tv_sec = 1;
 			tv.tv_usec = 0;
@@ -101,7 +101,6 @@ void *waitForInputEvent(void *threadid)  {
 void *eventMonitor() {
 	int rc;
 	initializeIE();
-//	int *activity = eventData.activity;
 	int event=0;
 	while (eventData.channels[event] != -1) {
 		rc = pthread_create(&eventData.tid[event], NULL, waitForInputEvent, (void *) event);
