@@ -79,7 +79,7 @@ void parse_command_line (int argc, char **argv) {
 	int i;
 	int c=0;
 	int event=0;
-  int result;
+	int result;
 
 	while (c != -1) {
 		c=getopt_long(argc,argv, "s:d:nu:U:l:wi:Ee:hac:b:A", long_options, NULL);
@@ -116,7 +116,7 @@ void parse_command_line (int argc, char **argv) {
 				have_irqs=1;
 				break;
 			case 'e':
-        result = access(optarg, R_OK);
+				result = access(optarg, R_OK);
 				switch(result) {
 					case 0:
 						eventData.events[event] = optarg;
@@ -136,7 +136,7 @@ void parse_command_line (int argc, char **argv) {
 				}
 				break;
 			case 'E':
-			  use_events=0;
+				use_events=0;
 				break;
 			case 'a':
 				force_autoprobe=1;
@@ -169,8 +169,8 @@ void parse_command_line (int argc, char **argv) {
 		exit(1);
 	}
 
-  if (use_events)
-	  eventData.events[event] = NULL;
+	if (use_events)
+		eventData.events[event] = NULL;
 
 	if (force_autoprobe)
 		autoprobe=1;
@@ -181,8 +181,8 @@ void loadcontrol (int signum) {
 	char buf[8];
 	
 	if (((f=open(CONTROL_FILE, O_RDONLY)) == -1) ||
-		(flock(f, LOCK_SH) == -1) ||
-		(read(f, buf, 7) == -1))
+	     (flock(f, LOCK_SH) == -1) ||
+	     (read(f, buf, 7) == -1))
 		return;
 	no_sleep=atoi(buf);
 	close(f);
@@ -204,11 +204,11 @@ void writecontrol (int value) {
 
 /**** stat the device file to get an idle time */
 // Copied from w.c in procps by Charles Blake
-int idletime(const char *tty) {
-  struct stat sbuf;
-  if (stat(tty, &sbuf) != 0)
-    return 0;
-  return (int)((long)time(NULL) - (long)sbuf.st_atime);
+int idletime (const char *tty) {
+	struct stat sbuf;
+	if (stat(tty, &sbuf) != 0)
+		return 0;
+	return (int)((long)time(NULL) - (long)sbuf.st_atime);
 }
 
 void main_loop (void) {
@@ -246,8 +246,8 @@ void main_loop (void) {
 		}
 
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
-				ai.battery_percentage < min_batt &&
-				ai.battery_status != BATTERY_STATUS_ABSENT) {
+		    ai.battery_percentage < min_batt &&
+		    ai.battery_status != BATTERY_STATUS_ABSENT) {
 			sleep_battery = 1;
 		}
 		if (sleep_battery && ! require_unused_and_battery) {
@@ -266,8 +266,7 @@ void main_loop (void) {
 			continue;
 		}
 
-		if (autoprobe || have_irqs)
-		{
+		if (autoprobe || have_irqs) {
 			f=fopen(INTERRUPTS, "r");
 			if (! f) {
 				perror(INTERRUPTS);
@@ -281,10 +280,10 @@ void main_loop (void) {
 						line[i]=tolower(line[i]);
 					/* See if it is a keyboard or mouse. */
 					if (strstr(line, "mouse") != NULL ||
-							strstr(line, "keyboard") != NULL ||
-							/* 2.5 kernels report by chipset,
-							 * this is a ps/2 keyboard/mouse. */
-							strstr(line, "i8042") != NULL) {
+					    strstr(line, "keyboard") != NULL ||
+					    /* 2.5 kernels report by chipset,
+					     * this is a ps/2 keyboard/mouse. */
+					    strstr(line, "i8042") != NULL) {
 						do_this_one=1;
 						probed=1;
 					}
@@ -293,8 +292,8 @@ void main_loop (void) {
 					}
 				}
 				if (sscanf(line,"%d: %ld",&i, &v) == 2 &&
-						i < MAX_IRQS &&
-						(do_this_one || irqs[i]) && irq_count[i] != v) {
+				    i < MAX_IRQS &&
+				    (do_this_one || irqs[i]) && irq_count[i] != v) {
 					activity=1;
 					irq_count[i] = v;
 				}
@@ -310,33 +309,34 @@ void main_loop (void) {
 		}
 
 		if ((max_loadavg != 0) &&
-				(getloadavg(loadavg, 1) == 1) &&
-				(loadavg[0] >= max_loadavg)) {
+		    (getloadavg(loadavg, 1) == 1) &&
+		    (loadavg[0] >= max_loadavg)) {
 			/* If the load average is too high */
 			activity = 1;
 		}
 
 		if (use_utmp == 1) {
-      /* replace total_unused with the minimum of total_unused and the
-       * shortest utmp idle time. */
-		  typedef struct utmp utmp_t;
+			/* replace total_unused with the minimum of
+			 * total_unused and the shortest utmp idle time. */
+			typedef struct utmp utmp_t;
 			utmp_t *u;
-      int min_idle=2*max_unused;
+			int min_idle=2*max_unused;
 			utmpname(UTMP_FILE);
 			setutent();
 			while ((u=getutent())) {
-        /* get tty. From w.c in procps by Charles Blake. */
-			  char tty[5 + sizeof u->ut_line + 1] = "/dev/";
-        for (i=0; i < sizeof u->ut_line; i++) /* clean up tty if garbled */
-          if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/'))
-            tty[i+5] = u->ut_line[i];
-          else
-            tty[i+5] = '\0';
-        int cur_idle=idletime(tty);
-				min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
-			}
-      //The shortest idle time is the real idle time
-      total_unused = (min_idle < total_unused) ? min_idle : total_unused;
+				/* get tty. From w.c in procps by Charles Blake. */
+				char tty[5 + sizeof u->ut_line + 1] = "/dev/";
+				for (i=0; i < sizeof u->ut_line; i++)
+					/* clean up tty if garbled */
+					if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/'))
+						tty[i+5] = u->ut_line[i];
+					else
+						tty[i+5] = '\0';
+					int cur_idle=idletime(tty);
+					min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
+					}
+				// The shortest idle time is the real idle time
+				total_unused = (min_idle < total_unused) ? min_idle : total_unused;
 		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
@@ -347,7 +347,8 @@ void main_loop (void) {
 
 		if (use_events) {
 			pthread_join(emthread, NULL);
-		} else {
+		}
+		else {
 			sleep(sleep_time);
 		}
 
@@ -376,7 +377,7 @@ void main_loop (void) {
 			}
 			else if (sleep_now && ! no_sleep && sleep_battery) {
 				syslog(LOG_NOTICE, "system inactive for %ds and battery level %d%% is below %d%%; forcing hibernaton", 
-						total_unused, ai.battery_percentage, min_batt);
+				       total_unused, ai.battery_percentage, min_batt);
 				if (system(hibernate_command) != 0)
 					syslog(LOG_ERR, "%s failed", hibernate_command);
 				total_unused=0;
@@ -465,7 +466,7 @@ int main (int argc, char **argv) {
 		 * use hal.
 		 */
 		if (acpi_supported() &&
-			(acpi_ac_count > 0 || acpi_batt_count > 0)) {
+		    (acpi_ac_count > 0 || acpi_batt_count > 0)) {
 			use_acpi=1;
 		}
 #ifdef HAL

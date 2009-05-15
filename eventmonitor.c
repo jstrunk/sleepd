@@ -27,38 +27,34 @@
 
 #include "eventmonitor.h"
 
-void initializeIE(void) 
-{
-		int j=0;
-		int tmpfd;
-		if (eventData.events[0] == NULL)
-		{
-      int i;
-			int result;
-      for( i=0; i<MAX_CHANNELS; i++)
-      {
-        char devName[128];
-        snprintf( devName, 127, "/dev/input/event%d",i);
+void initializeIE(void)  {
+	int j=0;
+	int tmpfd;
+	if (eventData.events[0] == NULL) {
+		int i;
+		int result;
+
+		for (i=0; i<MAX_CHANNELS; i++) {
+			char devName[128];
+			snprintf(devName, 127, "/dev/input/event%d",i);
 				result = access(devName, R_OK);
-				if (result == 0)
-				{
+				if (result == 0) {
 					eventData.events[j] = devName;
 					j++;
 				}
 			}
 			eventData.events[j] = NULL;
 		}
-		if (eventData.events[0] == NULL)
-		{
+
+		if (eventData.events[0] == NULL) {
 			fprintf(stderr,"sleepd: there are no event files to watch.\n");
 			exit(1);
 		}
+
 		j=0;
-		while (eventData.events[j] != NULL)
-		{
+		while (eventData.events[j] != NULL) {
 			tmpfd = open(eventData.events[j], O_RDONLY);
-			if( tmpfd != -1)
-			{
+			if (tmpfd != -1) {
 				eventData.channels[j] = tmpfd;
 				j++;
 			}
@@ -66,69 +62,60 @@ void initializeIE(void)
 		eventData.channels[j] = -1;
 }
 
-void cleanupIE(void) 
-{
-		int i;
-		for( i=0; eventData.channels[i] != -1; i++)
-		{
-	close( eventData.channels[i]);
-		}
+void cleanupIE(void)  {
+	int i;
+	for (i=0; eventData.channels[i] != -1; i++) {
+		close (eventData.channels[i]);
+	}
 }
 
-void *waitForInputEvent(void *threadid) 
-{
-		int tid = (int)threadid;
-		struct timeval tv;
-		int retval;
-		int *activity = eventData.activity;
-		fd_set eventWatch;
+void *waitForInputEvent(void *threadid)  {
+	int tid = (int)threadid;
+	struct timeval tv;
+	int retval;
+	int *activity = eventData.activity;
+	fd_set eventWatch;
 
-		int i;
-		for (i=0; i < eventData.timeout; i++)
-		{
-			if (*activity == 0)
-			{
-				FD_ZERO(&eventWatch);
-				FD_SET( eventData.channels[tid], &eventWatch);
+	int i;
+	for (i=0; i < eventData.timeout; i++) {
+		if (*activity == 0) {
+			FD_ZERO(&eventWatch);
+			FD_SET( eventData.channels[tid], &eventWatch);
 
-				tv.tv_sec = 1;
-				tv.tv_usec = 0;
-				retval = select(eventData.channels[tid] + 1, &eventWatch, NULL, NULL, &tv);
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
+			retval = select(eventData.channels[tid] + 1, &eventWatch, NULL, NULL, &tv);
 
-				if( retval > 0 )
-				{
-					*activity = 1;
-					break;
-				}
-			} else
-			{
+			if (retval > 0 ) {
+				*activity = 1;
 				break;
 			}
 		}
-		pthread_exit(NULL);
+		else {
+			break;
+		}
+	}
+	pthread_exit(NULL);
 }
 
-void *eventMonitor()
-{
-		int rc;
-		initializeIE();
-//		int *activity = eventData.activity;
-		int event=0;
-		while(eventData.channels[event] != -1)
-		{
-			rc = pthread_create(&eventData.tid[event], NULL, waitForInputEvent, (void *) event);
-			event++;
-		}
-		sleep(eventData.timeout);
+void *eventMonitor() {
+	int rc;
+	initializeIE();
+//	int *activity = eventData.activity;
+	int event=0;
+	while (eventData.channels[event] != -1) {
+		rc = pthread_create(&eventData.tid[event], NULL, waitForInputEvent, (void *) event);
+		event++;
+	}
+	sleep(eventData.timeout);
 
-		event=0;
-		while(eventData.channels[event] != -1)
-		{
-			rc = pthread_join(eventData.tid[event], NULL);
-			event++;
-		}
-		cleanupIE();
-		pthread_exit(NULL);
+	event=0;
+	while (eventData.channels[event] != -1) {
+		rc = pthread_join(eventData.tid[event], NULL);
+		event++;
+	}
+	cleanupIE();
+	pthread_exit(NULL);
 }
 
 /*
