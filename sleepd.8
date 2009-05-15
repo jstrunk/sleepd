@@ -13,12 +13,12 @@ off. It is also capable of suspending a laptop when its battery gets very
 low.
 .P
 .BR sleepd
-polls event devices to detect when your laptop is
-in use. It defaults to polling /dev/input/event* for keyboard and mouse
-activity. You may specify a list of device files to poll instead. After
-a configurable amount of time with no activity on these devices, it asks
-.BR apm (1)
-or some user-defined program to put the laptop to sleep.
+can detect activity in several ways. The default is to poll event devices
+to detect when your laptop is in use due to keyboard or mouse activity.
+It defaults to polling /dev/input/event*. You may specify a list of device
+files to poll instead, or use options to enable other means of checking
+for activity (interrupts, utmp, or load average). After a configurable amount
+of time with no activity, sleepd runs a program to put the laptop to sleep.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help
@@ -64,7 +64,7 @@ Automatically detect and watch mouse and keyboard irqs.
 .TP
 .B \-s, \-\-sleep-command
 Command to run to put the laptop to sleep. Defaults to "apm -s" for systems
-with apm and "hibernate --force" for systems with ACPI.
+with APM and "pm-suspend" for systems with ACPI.
 .TP
 .B \-b, \-\-battery
 If this option is specified, the daemon will put the laptop to sleep if the
@@ -86,7 +86,7 @@ sleep if idle and if the battery is low.
 Number of seconds between check on system status. Defaults to 10
 seconds, which should be fine generally.
 .SH "SEE ALSO"
-.BR sleepctl (1), apm (1)
+.BR sleepctl (1)
 .P
 .B http://kitenet.net/~joey/code/sleepd/
 .SH BUGS

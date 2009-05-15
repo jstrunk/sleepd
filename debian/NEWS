@@ -1,0 +1,14 @@
+sleepd (2.00) unstable; urgency=low
+
+  Two things have been modernised in this version of sleepd that might
+  cause it to behave differently.
+
+  Instead of checking for activity by interrupts, sleepd now defaults to using
+  the /dev/input/event* files. The old behavior can be obtained by running
+  sleepd with the '-E -a' flags.
+
+  To put a system to sleep, sleepd now uses the pm-suspend command,
+  instead of hibernate --force. To continue using hibernate,
+  use the -d flag.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 15 May 2009 15:39:55 -0400

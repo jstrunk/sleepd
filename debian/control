@@ -9,7 +9,7 @@ Homepage: http://kitenet.net/~joey/code/sleepd/
 
 Package: sleepd
 Depends: ${shlibs:Depends}, ${misc:Depends}, lsb-base
-Recommends: hibernate | apmd, hal
+Recommends: pm-utils | apmd, hal
 Architecture: any
 Conflicts: apm-sleep
 Provides: apm-sleep
