@@ -1,3 +1,12 @@
+sleepd (1.14) UNRELEASED; urgency=low
+
+  * Jeff Strunk contributed support for monitoring /dev/input/event*
+    files, to better support USB keyboards etc. Closes: #147678
+  * Jeff also added support for checking the utmp for idle times,
+    and for checking the system's load average.
+
+ -- Joey Hess <joeyh@debian.org>  Fri, 15 May 2009 15:26:31 -0400
+
 sleepd (1.13) unstable; urgency=low
 
   * Avoid crash by ignoring high irqs greater than 254
