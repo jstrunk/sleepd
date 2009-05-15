@@ -1,3 +1,12 @@
+sleepd (1.14) jaunty; urgency=low
+
+  * Poll /dev/input/event* for keyboard and mouse activity.
+    (This deprecates monitoring /proc/interrupts). Closes: #147678
+  * Get idletime from utmp.
+  * Consider load average.
+
+ -- Jeff Strunk (UTM) <jstrunk@math.utexas.edu> Fri, 15 May 2009 11:54:00 -0500
+
 sleepd (1.13) unstable; urgency=low
 
   * Avoid crash by ignoring high irqs greater than 254
