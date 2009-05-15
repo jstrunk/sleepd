@@ -154,10 +154,10 @@ void loadcontrol (int signum) {
 	char buf[8];
 	
 	if (((f=open(CONTROL_FILE, O_RDONLY)) == -1) ||
-            (flock(f, LOCK_SH) == -1) ||
-	    (read(f, buf, 7) == -1))
+						(flock(f, LOCK_SH) == -1) ||
+			(read(f, buf, 7) == -1))
 		return;
-        no_sleep=atoi(buf);
+				no_sleep=atoi(buf);
 	close(f);
 
 	signal(SIGHUP, loadcontrol);
@@ -178,7 +178,7 @@ void writecontrol (int value) {
 void main_loop (void) {
 #ifndef EM
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
-  int i, do_this_one=0, probed=0;
+	int i, do_this_one=0, probed=0;
 	FILE *f;
 	char line[64];
 	int no_dev_warned=1;
@@ -189,16 +189,16 @@ void main_loop (void) {
 	time_t nowtime, oldtime=0;
 	apm_info ai;
 #ifdef EM
-  pthread_t emthread;
-  eventData.activity = &activity;
-  eventData.timeout = sleep_time;
+	pthread_t emthread;
+	eventData.activity = &activity;
+	eventData.timeout = sleep_time;
 #endif
 
 	while (1) {
 		activity=0;
 
 #ifdef EM
-    pthread_create(&emthread, NULL, eventMonitor, NULL);
+		pthread_create(&emthread, NULL, eventMonitor, NULL);
 #endif
 		if (use_acpi) {
 			acpi_read(1, &ai);
@@ -213,8 +213,8 @@ void main_loop (void) {
 		}
 
 		if (min_batt != -1 && ai.ac_line_status != 1 && 
-		    ai.battery_percentage < min_batt &&
-		    ai.battery_status != BATTERY_STATUS_ABSENT) {
+				ai.battery_percentage < min_batt &&
+				ai.battery_status != BATTERY_STATUS_ABSENT) {
 			sleep_battery = 1;
 		}
 		if (sleep_battery && ! require_unused_and_battery) {
@@ -247,10 +247,10 @@ void main_loop (void) {
 					line[i]=tolower(line[i]);
 				/* See if it is a keyboard or mouse. */
 				if (strstr(line, "mouse") != NULL ||
-				    strstr(line, "keyboard") != NULL ||
-				    /* 2.5 kernels report by chipset,
-				     * this is a ps/2 keyboard/mouse. */
-				    strstr(line, "i8042") != NULL) {
+						strstr(line, "keyboard") != NULL ||
+						/* 2.5 kernels report by chipset,
+						 * this is a ps/2 keyboard/mouse. */
+						strstr(line, "i8042") != NULL) {
 					do_this_one=1;
 					probed=1;
 				}
@@ -259,8 +259,8 @@ void main_loop (void) {
 				}
 			}
 			if (sscanf(line,"%d: %ld",&i, &v) == 2 &&
-			    i < MAX_IRQS &&
-			    (do_this_one || irqs[i]) && irq_count[i] != v) {
+					i < MAX_IRQS &&
+					(do_this_one || irqs[i]) && irq_count[i] != v) {
 				activity=1;
 				irq_count[i] = v;
 			}
@@ -282,9 +282,9 @@ void main_loop (void) {
 		prev_ac_line_status=ai.ac_line_status;
 
 #ifdef EM
-    pthread_join(emthread, NULL);
+		pthread_join(emthread, NULL);
 #else
-    sleep(sleep_time);
+		sleep(sleep_time);
 #endif
 
 		if (activity) {
@@ -312,7 +312,7 @@ void main_loop (void) {
 			}
 			else if (sleep_now && ! no_sleep && sleep_battery) {
 				syslog(LOG_NOTICE, "system inactive for %ds and battery level %d%% is below %d%%; forcing hibernaton", 
-				       total_unused, ai.battery_percentage, min_batt);
+							 total_unused, ai.battery_percentage, min_batt);
 				if (system(hibernate_command) != 0)
 					syslog(LOG_ERR, "%s failed", hibernate_command);
 				total_unused=0;
@@ -401,7 +401,7 @@ int main (int argc, char **argv) {
 		 * use hal.
 		 */
 		if (acpi_supported() &&
-		    (acpi_ac_count > 0 || acpi_batt_count > 0)) {
+				(acpi_ac_count > 0 || acpi_batt_count > 0)) {
 			use_acpi=1;
 		}
 #ifdef HAL
