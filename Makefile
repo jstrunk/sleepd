@@ -1,4 +1,4 @@
-CFLAGS		= -O2 -Wall -DACPI_APM -pthread
+CFLAGS		= -O2 -Wall -DACPI_APM -pthread -g
 BINS		= sleepd sleepctl
 PREFIX		= /
 INSTALL_PROGRAM	= install

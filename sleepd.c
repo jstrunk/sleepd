@@ -119,7 +119,7 @@ void parse_command_line (int argc, char **argv) {
 				result = access(optarg, R_OK);
 				switch(result) {
 					case 0:
-						eventData.events[event] = optarg;
+						strncpy(eventData.events[event], optarg,127);
 						use_events=1;
 						event++;
 						break;
@@ -170,7 +170,7 @@ void parse_command_line (int argc, char **argv) {
 	}
 
 	if (use_events)
-		eventData.events[event] = NULL;
+		strncpy(eventData.events[event], "", 1);
 
 	if (force_autoprobe)
 		autoprobe=1;
@@ -217,7 +217,7 @@ void main_loop (void) {
 	FILE *f;
 	char line[64];
 	int no_dev_warned=1;
-	int activity, sleep_now=0, total_unused=0;
+	int activity=0, sleep_now=0, total_unused=0;
 	int sleep_battery=0;
 	int prev_ac_line_status=0;
 	time_t nowtime, oldtime=0;
@@ -227,11 +227,11 @@ void main_loop (void) {
 	eventData.timeout = sleep_time;
 	double loadavg[1];
 
+	if (use_events)
+		pthread_create(&emthread, NULL, eventMonitor, NULL);
+
 	while (1) {
 		activity=0;
-
-		if (use_events)
-			pthread_create(&emthread, NULL, eventMonitor, NULL);
 
 		if (use_acpi) {
 			acpi_read(1, &ai);
@@ -345,11 +345,12 @@ void main_loop (void) {
 		}
 		prev_ac_line_status=ai.ac_line_status;
 
-		if (use_events) {
-			pthread_join(emthread, NULL);
-		}
-		else {
-			sleep(sleep_time);
+		sleep(sleep_time);
+
+		if (use_events && (eventData.emactivity == 1))
+		{
+			printf("em says there was activity\n");
+			activity = 1;
 		}
 
 		if (activity) {
