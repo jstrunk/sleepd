@@ -90,7 +90,6 @@ void *eventMonitor() {
 	{
 		if (*activity == 0)
 		{
-			printf("starting to wait for input\n");
 			start = time(NULL);
 			eventData.emactivity = 0;
 			FD_ZERO(&eventWatch);
@@ -106,7 +105,6 @@ void *eventMonitor() {
 			retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
 
 			if (retval > 0 ) {
-				printf("em found acivity\n");
 				eventData.emactivity = 1;
 			}
 			end = time(NULL);
