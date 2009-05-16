@@ -347,9 +347,7 @@ void main_loop (void) {
 
 		sleep(sleep_time);
 
-		if (use_events && (eventData.emactivity == 1))
-		{
-			printf("em says there was activity\n");
+		if (use_events && (eventData.emactivity == 1)) {
 			activity = 1;
 		}
 
