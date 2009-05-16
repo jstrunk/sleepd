@@ -28,21 +28,17 @@
 
 #include "eventmonitor.h"
 
-void initializeIE(void)
-{
+void initializeIE(void) {
 	int j=0;
 	int i;
 	int tmpfd;
-	if (strncmp(eventData.events[0], "", 1) == 0)
-	{
+	if (strncmp(eventData.events[0], "", 1) == 0) {
 		int result;
-		for (i=0; i<MAX_CHANNELS; i++)
-		{
+		for (i=0; i<MAX_CHANNELS; i++) {
 			char devName[128];
 			snprintf(devName, 127, "/dev/input/event%d",i);
 				result = access(devName, R_OK);
-				if (result == 0)
-				{
+				if (result == 0) {
 					strncpy(eventData.events[j], devName, 127);
 					j++;
 				}
@@ -50,19 +46,16 @@ void initializeIE(void)
 			strncpy(eventData.events[j], "", 1);
 		}
 
-		if (strncmp(eventData.events[0], "", 1) == 0)
-		{
+		if (strncmp(eventData.events[0], "", 1) == 0) {
 			fprintf(stderr,"sleepd: there are no event files to watch.\n");
 			exit(1);
 		}
 
 		i=0;
 		j=0;
-		while (strncmp(eventData.events[i], "", 1) != 0)
-		{
+		while (strncmp(eventData.events[i], "", 1) != 0) {
 			tmpfd = open(eventData.events[i], O_RDONLY);
-			if (tmpfd != -1)
-			{
+			if (tmpfd != -1) {
 				eventData.channels[j] = tmpfd;
 				j++;
 			}
@@ -86,17 +79,15 @@ void *eventMonitor() {
 	int elapsed;
 	initializeIE();
 	fd_set eventWatch;
-	while (1)
-	{
-		if (*activity == 0)
-		{
+	while (1) {
+		if (*activity == 0) {
 			start = time(NULL);
 			eventData.emactivity = 0;
 			FD_ZERO(&eventWatch);
-			for (i=0; eventData.channels[i] != -1; i++)
-			{
+			for (i=0; eventData.channels[i] != -1; i++) {
 				FD_SET (eventData.channels[i], &eventWatch);
-				if( eventData.channels[i] > maxfd) maxfd = eventData.channels[i];
+				if (eventData.channels[i] > maxfd)
+					maxfd = eventData.channels[i];
 			}
 
 			maxfd++;
@@ -104,16 +95,15 @@ void *eventMonitor() {
 			tv.tv_usec = 0;
 			retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
 
-			if (retval > 0 ) {
+			if (retval > 0 )
 				eventData.emactivity = 1;
-			}
 			end = time(NULL);
 			elapsed = (end - start);
 			if ((eventData.timeout - elapsed) >= 1)
-			  sleep(eventData.timeout - elapsed);
+				sleep(eventData.timeout - elapsed);
 		}
-		else //wait for the main thread to reset
-		{
+		else {
+			// wait for the main thread to reset
 			sleep(1);
 		}
 	}
