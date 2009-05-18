@@ -5,7 +5,6 @@ struct event_data
 	int channels[MAX_CHANNELS];
 	int timeout;
 	int emactivity;
-	int *activity;
 };
 
 struct event_data eventData;

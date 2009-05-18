@@ -223,15 +223,14 @@ void main_loop (void) {
 	time_t nowtime, oldtime=0;
 	apm_info ai;
 	pthread_t emthread;
-	eventData.activity = &activity;
 	eventData.timeout = sleep_time;
 	double loadavg[1];
 
-	if (use_events)
-		pthread_create(&emthread, NULL, eventMonitor, NULL);
-
 	while (1) {
 		activity=0;
+		if (use_events) {
+			pthread_create(&emthread, NULL, eventMonitor, NULL);
+		}
 
 		if (use_acpi) {
 			acpi_read(1, &ai);
@@ -345,10 +344,14 @@ void main_loop (void) {
 		}
 		prev_ac_line_status=ai.ac_line_status;
 
-		sleep(sleep_time);
 
-		if (use_events && (eventData.emactivity == 1)) {
-			activity = 1;
+		if (use_events) {
+			pthread_join(emthread, NULL);
+			if (eventData.emactivity == 1) {
+				activity = 1;
+			}
+		} else {
+			sleep(sleep_time);
 		}
 
 		if (activity) {

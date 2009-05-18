@@ -73,39 +73,34 @@ void cleanupIE(void)  {
 
 void *eventMonitor() {
 	int i, maxfd=0, retval;
-	int *activity = eventData.activity;
 	struct timeval tv;
 	time_t start, end;
 	int elapsed;
+	start = time(NULL);
 	initializeIE();
 	fd_set eventWatch;
-	while (1) {
-		if (*activity == 0) {
-			start = time(NULL);
-			eventData.emactivity = 0;
-			FD_ZERO(&eventWatch);
-			for (i=0; eventData.channels[i] != -1; i++) {
-				FD_SET (eventData.channels[i], &eventWatch);
-				if (eventData.channels[i] > maxfd)
-					maxfd = eventData.channels[i];
-			}
+	eventData.emactivity = 0;
+	FD_ZERO(&eventWatch);
+	for (i=0; eventData.channels[i] != -1; i++) {
+		FD_SET (eventData.channels[i], &eventWatch);
+		if (eventData.channels[i] > maxfd)
+			maxfd = eventData.channels[i];
+	}
 
-			maxfd++;
-			tv.tv_sec = eventData.timeout;
-			tv.tv_usec = 0;
-			retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
+	maxfd++;
+	tv.tv_sec = eventData.timeout;
+	tv.tv_usec = 0;
+	retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
 
-			if (retval > 0 )
-				eventData.emactivity = 1;
-			end = time(NULL);
-			elapsed = (end - start);
-			if ((eventData.timeout - elapsed) >= 1)
-				sleep(eventData.timeout - elapsed);
-		}
-		else {
-			// wait for the main thread to reset
-			sleep(1);
-		}
+	if (retval > 0 )
+	{
+		eventData.emactivity = 1;
+	}
+	end = time(NULL);
+	elapsed = (end - start);
+	if ((eventData.timeout - elapsed) >= 1)
+	{
+		sleep(eventData.timeout - elapsed);
 	}
 
 	cleanupIE();
