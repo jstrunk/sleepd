@@ -30,7 +30,7 @@
 #include "sleepd.h"
 
 int irqs[MAX_IRQS]; /* irqs to examine have a value of 1 */
-int autoprobe=0;
+int autoprobe=1;
 int have_irqs=0;
 int use_events=1;
 int max_unused=10 * 60; /* in seconds */
@@ -52,7 +52,7 @@ double max_loadavg = 0;
 int use_utmp=0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -62,9 +62,10 @@ void parse_command_line (int argc, char **argv) {
 		{"unused", 1, NULL, 'u'},
 		{"ac-unused", 1, NULL, 'U'},
 		{"load", 1, NULL, 'l'},
-		{"utmp", 1, NULL, 'w'},
+		{"utmp", 0, NULL, 'w'},
+		{"no-irq", 0, NULL, 'I'},
 		{"irq", 1, NULL, 'i'},
-		{"no-events", 1, NULL, 'E'},
+		{"no-events", 0, NULL, 'E'},
 		{"event", 1, NULL, 'e'},
 		{"help", 0, NULL, 'h'},
 		{"sleep-command", 1, NULL, 's'},
@@ -76,13 +77,14 @@ void parse_command_line (int argc, char **argv) {
 		{0, 0, 0, 0}
 	};
 	int force_autoprobe=0;
+	int noirq=0;
 	int i;
 	int c=0;
 	int event=0;
 	int result;
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:d:nu:U:l:wi:Ee:hac:b:A", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nu:U:l:wIi:Ee:hac:b:A", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -141,6 +143,9 @@ void parse_command_line (int argc, char **argv) {
 			case 'a':
 				force_autoprobe=1;
 				break;
+			case 'I':
+				noirq=1;
+				break;
 			case 'h':
 				usage();
 				exit(0);
@@ -171,6 +176,9 @@ void parse_command_line (int argc, char **argv) {
 
 	if (use_events)
 		strncpy(eventData.events[event], "", 1);
+
+	if (noirq)
+		autoprobe=0;
 
 	if (force_autoprobe)
 		autoprobe=1;

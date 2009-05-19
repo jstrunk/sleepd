@@ -3,7 +3,7 @@
 sleepd \- puts a laptop to sleep during inactivity or on low battery
 .SH SYNOPSIS
 .B sleepd
-.I "[-s command] [-d command] [-u n] [-U n] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]"
+.I "[-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]"
 .SH DESCRIPTION
 .BR sleepd
 is a daemon to force laptops to go to sleep after some period of
@@ -13,12 +13,12 @@ off. It is also capable of suspending a laptop when its battery gets very
 low.
 .P
 .BR sleepd
-can detect activity in several ways. The default is to poll event devices
-to detect when your laptop is in use due to keyboard or mouse activity.
-It defaults to polling /dev/input/event*. You may specify a list of device
-files to poll instead, or use options to enable other means of checking
-for activity (interrupts, utmp, or load average). After a configurable amount
-of time with no activity, sleepd runs a program to put the laptop to sleep.
+can detect activity in several ways. The default is to poll both event devices
+and interrupts to detect when your laptop is in use due to keyboard or mouse
+activity.  It defaults to polling /dev/input/event*. You may specify a list of
+device files to poll instead, or use options to enable other means of checking
+for activity (utmp or load average). After a configurable amount of time with
+no activity, sleepd runs a program to put the laptop to sleep.
 .SH OPTIONS
 .TP
 .B \-h, \-\-help
@@ -42,8 +42,7 @@ Adds an event file to the list that is watched. Using this switch disables
 polling all files in /dev/input/event*.
 .TP
 .B \-E, \-\-no-events
-This switch disables event device polling. You will probably want to enable
-the irq method with -a and/or -i.
+This switch disables event device polling.
 .TP
 .B \-l, \-\-load
 If set, a load average higher than this number will prevent the computer
@@ -58,6 +57,9 @@ time limit from \-u.
 Adds an irq to the list that is watched. Using this switch disables
 automatic detection of keyboard and mouse irqs unless -a is specified as
 well.
+.TP
+.B \-I, \-\-no-irq
+This switch disables interrupt polling.
 .TP
 .B \-a, \-\-auto
 Automatically detect and watch mouse and keyboard irqs.
