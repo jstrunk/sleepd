@@ -216,7 +216,7 @@ int idletime (const char *tty) {
 	struct stat sbuf;
 	if (stat(tty, &sbuf) != 0)
 		return 0;
-	return (int)((long)time(NULL) - (long)sbuf.st_atime);
+	return (int)(time(NULL) - sbuf.st_atime);
 }
 
 void main_loop (void) {
@@ -331,17 +331,21 @@ void main_loop (void) {
 			utmpname(UTMP_FILE);
 			setutent();
 			while ((u=getutent())) {
-				/* get tty. From w.c in procps by Charles Blake. */
-				char tty[5 + sizeof u->ut_line + 1] = "/dev/";
-				for (i=0; i < sizeof u->ut_line; i++)
-					/* clean up tty if garbled */
-					if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/'))
-						tty[i+5] = u->ut_line[i];
-					else
-						tty[i+5] = '\0';
+				if (u->ut_type == USER_PROCESS) {
+          /* get tty. From w.c in procps by Charles Blake. */
+          char tty[5 + sizeof u->ut_line + 1] = "/dev/";
+          for (i=0; i < sizeof u->ut_line; i++) {
+            /* clean up tty if garbled */
+            if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/')) {
+              tty[i+5] = u->ut_line[i];
+						} else {
+              tty[i+5] = '\0';
+						}
+					}
 					int cur_idle=idletime(tty);
 					min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
 					}
+				}
 				// The shortest idle time is the real idle time
 				total_unused = (min_idle < total_unused) ? min_idle : total_unused;
 		}
