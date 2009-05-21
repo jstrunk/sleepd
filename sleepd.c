@@ -55,15 +55,17 @@ int min_tx=TXRATE;
 int min_rx=RXRATE;
 char netdevtx[MAX_NET][44];
 char netdevrx[MAX_NET][44];
+int debug=0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A] [-N [dev] [-t n] [-r n]]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-v] [-c n] [-b n] [-A] [-N [dev] [-t n] [-r n]]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
 	extern char *optarg;
 	struct option long_options[] = {
 		{"nodaemon", 0, NULL, 'n'},
+		{"verbose", 0, NULL, 'v'},
 		{"unused", 1, NULL, 'u'},
 		{"ac-unused", 1, NULL, 'U'},
 		{"load", 1, NULL, 'l'},
@@ -96,7 +98,7 @@ void parse_command_line (int argc, char **argv) {
 	char rx_statfile[44];
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:d:nu:U:l:wIi:Ee:hac:b:AN::r:t:", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nvu:U:l:wIi:Ee:hac:b:AN::r:t:", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -106,6 +108,9 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'n':
 				daemonize=0;
+				break;
+			case 'v':
+				debug=1;
 				break;
 			case 'u':
 				max_unused=atoi(optarg);
@@ -309,6 +314,8 @@ void main_loop (void) {
 			if (system(hibernate_command) != 0)
 				syslog(LOG_ERR, "%s failed", hibernate_command);
 			/* This counts as activity; to prevent double sleeps. */
+			if (debug)
+				printf("sleepd: activity: just woke up\n");
 			activity=1;
 			oldtime=0;
 			sleep_battery=0;
@@ -348,6 +355,8 @@ void main_loop (void) {
 				if (sscanf(line,"%d: %ld",&i, &v) == 2 &&
 				    i < MAX_IRQS &&
 				    (do_this_one || irqs[i]) && irq_count[i] != v) {
+					if (debug)
+						printf("sleepd: activity: irq %d\n", i);
 					activity=1;
 					irq_count[i] = v;
 				}
@@ -384,6 +393,10 @@ void main_loop (void) {
 					fclose(f);
 					if (((tx - tx_count[i])/sleep_time > min_tx) ||
 							((rx - rx_count[i])/sleep_time > min_rx)) {
+						if (debug) {
+							printf("sleepd: activity: network txrate: %ld rxrate: %ld\n",
+								(tx - tx_count[i])/sleep_time, (rx - rx_count[i])/sleep_time);
+						}
 						activity=1;
 					}
 					tx_count[i]=tx;
@@ -398,7 +411,9 @@ void main_loop (void) {
 		    (getloadavg(loadavg, 1) == 1) &&
 		    (loadavg[0] >= max_loadavg)) {
 			/* If the load average is too high */
-			activity = 1;
+			if (debug)
+				printf("sleepd: activity: load average %f\n", loadavg[0]);
+			activity=1;
 		}
 
 		if (use_utmp == 1) {
@@ -427,10 +442,14 @@ void main_loop (void) {
 				}
 				// The shortest idle time is the real idle time
 				total_unused = (min_idle < total_unused) ? min_idle : total_unused;
+				if (debug && total_unused == min_idle)
+					printf("sleepd: activity: utmp %d seconds\n", min_idle);
 		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
 			/* AC plug/unplug counts as activity. */
+			if (debug)
+				printf("sleepd: activity: AC status change\n");
 			activity=1;
 		}
 		prev_ac_line_status=ai.ac_line_status;
@@ -439,7 +458,9 @@ void main_loop (void) {
 		if (use_events) {
 			pthread_join(emthread, NULL);
 			if (eventData.emactivity == 1) {
-				activity = 1;
+				if (debug)
+					printf("sleepd: activity: keyboard/mouse events\n");
+				activity=1;
 			}
 		} else {
 			sleep(sleep_time);
