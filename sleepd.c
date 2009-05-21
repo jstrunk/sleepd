@@ -50,9 +50,14 @@ int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 double max_loadavg = 0;
 int use_utmp=0;
+int use_net=0;
+int min_tx=TXRATE;
+int min_rx=RXRATE;
+char netdevtx[MAX_NET][44];
+char netdevrx[MAX_NET][44];
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A] [-N [dev] [-t n] [-r n]]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
@@ -74,6 +79,9 @@ void parse_command_line (int argc, char **argv) {
 		{"check-period", 1, NULL, 'c'},
 		{"battery", 1, NULL, 'b'},
 		{"and", 0, NULL, 'A'},
+		{"netdev", 2, NULL, 'N'},
+		{"rx-min", 1, NULL, 'r'},
+		{"tx-min", 1, NULL, 't'},
 		{0, 0, 0, 0}
 	};
 	int force_autoprobe=0;
@@ -81,10 +89,14 @@ void parse_command_line (int argc, char **argv) {
 	int i;
 	int c=0;
 	int event=0;
+	int netcount=0;
 	int result;
+	char tmpdev[8];
+	char tx_statfile[44];
+	char rx_statfile[44];
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:d:nu:U:l:wIi:Ee:hac:b:A", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nu:U:l:wIi:Ee:hac:b:AN::r:t:", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -164,6 +176,35 @@ void parse_command_line (int argc, char **argv) {
 					exit(1);
 				}
 				break;
+			case 'N':
+				if (optarg == NULL) {
+					if (netcount == 0) {
+						sprintf(tmpdev, "eth0");
+					} else {
+						fprintf(stderr, "sleepd: multiple -N options with no arguments\n");
+						exit(1);
+					}
+				} else {
+					strncpy(tmpdev, optarg, 8);
+				}
+				sprintf(tx_statfile, TXFILE, tmpdev);
+				sprintf(rx_statfile, RXFILE, tmpdev);
+				if ((access(tx_statfile, R_OK) == 0) && (access(rx_statfile, R_OK) == 0)) {
+					strncpy(netdevtx[netcount], tx_statfile, 44);
+					strncpy(netdevrx[netcount], rx_statfile, 44);
+					use_net=1;
+					netcount++;
+				} else {
+					fprintf(stderr, "sleepd: %s not found in sysfs\n", tmpdev);
+					exit(1);
+				}
+				break;
+			case 't':
+				min_tx = atoi(optarg);
+				break;
+			case 'r':
+				min_rx = atoi(optarg);
+				break;
 			case 'A':
 				require_unused_and_battery=1;
 				break;
@@ -176,6 +217,10 @@ void parse_command_line (int argc, char **argv) {
 
 	if (use_events)
 		strncpy(eventData.events[event], "", 1);
+
+	if (use_net)
+		strncpy(netdevtx[netcount], "", 1);
+		strncpy(netdevrx[netcount], "", 1);
 
 	if (noirq)
 		autoprobe=0;
@@ -221,6 +266,8 @@ int idletime (const char *tty) {
 
 void main_loop (void) {
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
+	long tx_count[MAX_NET]; /* holds previous counters of tx packets */
+	long rx_count[MAX_NET]; /* holds previous counters of rx packets */
 	int i, do_this_one=0, probed=0;
 	FILE *f;
 	char line[64];
@@ -312,6 +359,38 @@ void main_loop (void) {
 			if (! no_dev_warned) {
 				no_dev_warned=1;
 				syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
+			}
+		}
+
+		if (use_net) {
+			long tx,rx;
+			for (i=0; i < MAX_NET; i++) {
+				if (strncmp(netdevtx[i], "", 1) != 0) {
+					f=fopen(netdevtx[i], "r");
+					if (fgets(line,sizeof(line),f)) {
+						tx = strtol(line, (char **) NULL, 10);
+					} else {
+						fprintf(stderr, "sleepd: could not read %s\n", netdevtx[i]);
+						exit(1);
+					}
+					fclose(f);
+					f=fopen(netdevrx[i], "r");
+					if (fgets(line,sizeof(line),f)) {
+						rx = strtol(line, (char **) NULL, 10);
+					} else {
+						fprintf(stderr, "sleepd: could not read %s\n", netdevrx[i]);
+						exit(1);
+					}
+					fclose(f);
+					if (((tx - tx_count[i])/sleep_time > min_tx) ||
+							((rx - rx_count[i])/sleep_time > min_rx)) {
+						activity=1;
+					}
+					tx_count[i]=tx;
+					rx_count[i]=rx;
+				} else {
+					break;
+				}
 			}
 		}
 
