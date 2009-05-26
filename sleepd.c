@@ -325,11 +325,88 @@ int check_irqs (int activity, int autoprobe) {
 	return activity;
 }
 
+int check_net (int activity) {
+	static long tx_count[MAX_NET]; /* holds previous counters of tx packets */
+	static long rx_count[MAX_NET]; /* holds previous counters of rx packets */
+
+	long tx,rx;
+	int i;
+	for (i=0; i < MAX_NET; i++) {
+		if (strncmp(netdevtx[i], "", 1) != 0) {
+			char line[64];
+			FILE *f=fopen(netdevtx[i], "r");
+			if (fgets(line,sizeof(line),f)) {
+				tx = strtol(line, (char **) NULL, 10);
+			}
+			else {
+				fprintf(stderr, "sleepd: could not read %s\n", netdevtx[i]);
+				exit(1);
+			}
+			fclose(f);
+			f=fopen(netdevrx[i], "r");
+			if (fgets(line,sizeof(line),f)) {
+				rx = strtol(line, (char **) NULL, 10);
+			}
+			else {
+				fprintf(stderr, "sleepd: could not read %s\n", netdevrx[i]);
+				exit(1);
+			}
+			fclose(f);
+			if (((tx - tx_count[i])/sleep_time > min_tx) ||
+			    ((rx - rx_count[i])/sleep_time > min_rx)) {
+				if (debug) {
+					printf("sleepd: activity: network txrate: %ld rxrate: %ld\n",
+						(tx - tx_count[i])/sleep_time, (rx - rx_count[i])/sleep_time);
+				}
+				activity=1;
+			}
+			tx_count[i]=tx;
+			rx_count[i]=rx;
+		}
+		else {
+			break;
+		}
+	}
+
+	return activity;
+}
+
+int check_utmp (int total_unused) {
+	/* replace total_unused with the minimum of
+	 * total_unused and the shortest utmp idle time. */
+	typedef struct utmp utmp_t;
+	utmp_t *u;
+	int min_idle=2*max_unused;
+	utmpname(UTMP_FILE);
+	setutent();
+	while ((u=getutent())) {
+		if (u->ut_type == USER_PROCESS) {
+			/* get tty. From w.c in procps by Charles Blake. */
+			char tty[5 + sizeof u->ut_line + 1] = "/dev/";
+			int i;
+			for (i=0; i < sizeof u->ut_line; i++) {
+				/* clean up tty if garbled */
+				if (isalnum(u->ut_line[i]) ||
+				    (u->ut_line[i]=='/')) {
+					tty[i+5] = u->ut_line[i];
+				}
+				else {
+					tty[i+5] = '\0';
+				}
+			}
+			int cur_idle=idletime(tty);
+			min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
+		}
+	}
+	/* The shortest idle time is the real idle time */
+	total_unused = (min_idle < total_unused) ? min_idle : total_unused;
+	if (debug && total_unused == min_idle)
+		printf("sleepd: activity: utmp %d seconds\n", min_idle);
+
+	return total_unused;
+}
 
 void main_loop (void) {
-	long tx_count[MAX_NET]; /* holds previous counters of tx packets */
-	long rx_count[MAX_NET]; /* holds previous counters of rx packets */
-	int i;
 	int activity=0, sleep_now=0, total_unused=0;
 	int sleep_battery=0;
 	int prev_ac_line_status=0;
@@ -385,43 +462,7 @@ void main_loop (void) {
 		}
 
 		if (use_net) {
-			long tx,rx;
-			for (i=0; i < MAX_NET; i++) {
-				if (strncmp(netdevtx[i], "", 1) != 0) {
-					char line[64];
-					FILE *f=fopen(netdevtx[i], "r");
-					if (fgets(line,sizeof(line),f)) {
-						tx = strtol(line, (char **) NULL, 10);
-					}
-					else {
-						fprintf(stderr, "sleepd: could not read %s\n", netdevtx[i]);
-						exit(1);
-					}
-					fclose(f);
-					f=fopen(netdevrx[i], "r");
-					if (fgets(line,sizeof(line),f)) {
-						rx = strtol(line, (char **) NULL, 10);
-					}
-					else {
-						fprintf(stderr, "sleepd: could not read %s\n", netdevrx[i]);
-						exit(1);
-					}
-					fclose(f);
-					if (((tx - tx_count[i])/sleep_time > min_tx) ||
-					    ((rx - rx_count[i])/sleep_time > min_rx)) {
-						if (debug) {
-							printf("sleepd: activity: network txrate: %ld rxrate: %ld\n",
-								(tx - tx_count[i])/sleep_time, (rx - rx_count[i])/sleep_time);
-						}
-						activity=1;
-					}
-					tx_count[i]=tx;
-					rx_count[i]=rx;
-				}
-				else {
-					break;
-				}
-			}
+			activity=check_net(activity);
 		}
 
 		if ((max_loadavg != 0) &&
@@ -434,35 +475,7 @@ void main_loop (void) {
 		}
 
 		if (use_utmp == 1) {
-			/* replace total_unused with the minimum of
-			 * total_unused and the shortest utmp idle time. */
-			typedef struct utmp utmp_t;
-			utmp_t *u;
-			int min_idle=2*max_unused;
-			utmpname(UTMP_FILE);
-			setutent();
-			while ((u=getutent())) {
-				if (u->ut_type == USER_PROCESS) {
-					/* get tty. From w.c in procps by Charles Blake. */
-					char tty[5 + sizeof u->ut_line + 1] = "/dev/";
-					for (i=0; i < sizeof u->ut_line; i++) {
-						/* clean up tty if garbled */
-						if (isalnum(u->ut_line[i]) ||
-						    (u->ut_line[i]=='/')) {
-							tty[i+5] = u->ut_line[i];
-						}
-						else {
-							tty[i+5] = '\0';
-						}
-					}
-					int cur_idle=idletime(tty);
-					min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
-				}
-			}
-			/* The shortest idle time is the real idle time */
-			total_unused = (min_idle < total_unused) ? min_idle : total_unused;
-			if (debug && total_unused == min_idle)
-				printf("sleepd: activity: utmp %d seconds\n", min_idle);
+			total_unused=check_utmp(total_unused);
 		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
@@ -472,7 +485,6 @@ void main_loop (void) {
 			activity=1;
 		}
 		prev_ac_line_status=ai.ac_line_status;
-
 
 		if (use_events) {
 			pthread_join(emthread, NULL);
