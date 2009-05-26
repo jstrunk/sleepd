@@ -273,14 +273,63 @@ int idletime (const char *tty) {
 	return (int)(time(NULL) - sbuf.st_atime);
 }
 
-void main_loop (void) {
-	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
-	long tx_count[MAX_NET]; /* holds previous counters of tx packets */
-	long rx_count[MAX_NET]; /* holds previous counters of rx packets */
-	int i, do_this_one=0, probed=0;
+int check_irqs (int activity, int autoprobe) {
+	static long irq_count[MAX_IRQS]; /* holds previous counters of the irqs */
+	static int probed=0;
+	static int no_dev_warned=0;
+
 	FILE *f;
 	char line[64];
-	int no_dev_warned=1;
+	int i;
+
+	f=fopen(INTERRUPTS, "r");
+	if (! f) {
+		perror(INTERRUPTS);
+		exit(1);
+	}
+	while (fgets(line,sizeof(line),f)) {
+		long v;
+		int do_this_one=0;
+		if (autoprobe) {
+			/* Lowercase line. */
+			for(i=0;line[i];i++)
+				line[i]=tolower(line[i]);
+			/* See if it is a keyboard or mouse. */
+			if (strstr(line, "mouse") != NULL ||
+			    strstr(line, "keyboard") != NULL ||
+			    /* 2.5 kernels report by chipset,
+			     * this is a ps/2 keyboard/mouse. */
+			    strstr(line, "i8042") != NULL) {
+				do_this_one=1;
+				probed=1;
+			}
+		}
+		if (sscanf(line,"%d: %ld",&i, &v) == 2 &&
+		    i < MAX_IRQS &&
+		    (do_this_one || irqs[i]) && irq_count[i] != v) {
+			if (debug)
+				printf("sleepd: activity: irq %d\n", i);
+			activity=1;
+			irq_count[i] = v;
+		}
+	}
+	fclose(f);
+	
+	if (autoprobe && ! probed) {
+		if (! no_dev_warned) {
+			no_dev_warned=1;
+			syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
+		}
+	}
+
+	return activity;
+}
+
+
+void main_loop (void) {
+	long tx_count[MAX_NET]; /* holds previous counters of tx packets */
+	long rx_count[MAX_NET]; /* holds previous counters of rx packets */
+	int i;
 	int activity=0, sleep_now=0, total_unused=0;
 	int sleep_battery=0;
 	int prev_ac_line_status=0;
@@ -332,54 +381,15 @@ void main_loop (void) {
 		}
 
 		if (autoprobe || have_irqs) {
-			f=fopen(INTERRUPTS, "r");
-			if (! f) {
-				perror(INTERRUPTS);
-				exit(1);
-			}
-			while(fgets(line,sizeof(line),f)) {
-				long v;
-				if (autoprobe) {
-					/* Lowercase line. */
-					for(i=0;line[i];i++)
-						line[i]=tolower(line[i]);
-					/* See if it is a keyboard or mouse. */
-					if (strstr(line, "mouse") != NULL ||
-					    strstr(line, "keyboard") != NULL ||
-					    /* 2.5 kernels report by chipset,
-					     * this is a ps/2 keyboard/mouse. */
-					    strstr(line, "i8042") != NULL) {
-						do_this_one=1;
-						probed=1;
-					}
-					else {
-						do_this_one=0;
-					}
-				}
-				if (sscanf(line,"%d: %ld",&i, &v) == 2 &&
-				    i < MAX_IRQS &&
-				    (do_this_one || irqs[i]) && irq_count[i] != v) {
-					if (debug)
-						printf("sleepd: activity: irq %d\n", i);
-					activity=1;
-					irq_count[i] = v;
-				}
-			}
-			fclose(f);
-		}
-		
-		if (autoprobe && ! probed) {
-			if (! no_dev_warned) {
-				no_dev_warned=1;
-				syslog(LOG_WARNING, "no keyboard or mouse irqs autoprobed");
-			}
+			activity=check_irqs(activity, autoprobe);
 		}
 
 		if (use_net) {
 			long tx,rx;
 			for (i=0; i < MAX_NET; i++) {
 				if (strncmp(netdevtx[i], "", 1) != 0) {
-					f=fopen(netdevtx[i], "r");
+					char line[64];
+					FILE *f=fopen(netdevtx[i], "r");
 					if (fgets(line,sizeof(line),f)) {
 						tx = strtol(line, (char **) NULL, 10);
 					}
@@ -438,7 +448,7 @@ void main_loop (void) {
 					for (i=0; i < sizeof u->ut_line; i++) {
 						/* clean up tty if garbled */
 						if (isalnum(u->ut_line[i]) ||
-						    (u->ut_line[i]=='/')) {'
+						    (u->ut_line[i]=='/')) {
 							tty[i+5] = u->ut_line[i];
 						}
 						else {
