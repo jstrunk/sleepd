@@ -185,21 +185,25 @@ void parse_command_line (int argc, char **argv) {
 				if (optarg == NULL) {
 					if (netcount == 0) {
 						sprintf(tmpdev, "eth0");
-					} else {
+					}
+					else {
 						fprintf(stderr, "sleepd: multiple -N options with no arguments\n");
 						exit(1);
 					}
-				} else {
+				}
+				else {
 					strncpy(tmpdev, optarg, 8);
 				}
 				sprintf(tx_statfile, TXFILE, tmpdev);
 				sprintf(rx_statfile, RXFILE, tmpdev);
-				if ((access(tx_statfile, R_OK) == 0) && (access(rx_statfile, R_OK) == 0)) {
+				if ((access(tx_statfile, R_OK) == 0) &&
+				    (access(rx_statfile, R_OK) == 0)) {
 					strncpy(netdevtx[netcount], tx_statfile, 44);
 					strncpy(netdevrx[netcount], rx_statfile, 44);
 					use_net=1;
 					netcount++;
-				} else {
+				}
+				else {
 					fprintf(stderr, "sleepd: %s not found in sysfs\n", tmpdev);
 					exit(1);
 				}
@@ -378,7 +382,8 @@ void main_loop (void) {
 					f=fopen(netdevtx[i], "r");
 					if (fgets(line,sizeof(line),f)) {
 						tx = strtol(line, (char **) NULL, 10);
-					} else {
+					}
+					else {
 						fprintf(stderr, "sleepd: could not read %s\n", netdevtx[i]);
 						exit(1);
 					}
@@ -386,13 +391,14 @@ void main_loop (void) {
 					f=fopen(netdevrx[i], "r");
 					if (fgets(line,sizeof(line),f)) {
 						rx = strtol(line, (char **) NULL, 10);
-					} else {
+					}
+					else {
 						fprintf(stderr, "sleepd: could not read %s\n", netdevrx[i]);
 						exit(1);
 					}
 					fclose(f);
 					if (((tx - tx_count[i])/sleep_time > min_tx) ||
-							((rx - rx_count[i])/sleep_time > min_rx)) {
+					    ((rx - rx_count[i])/sleep_time > min_rx)) {
 						if (debug) {
 							printf("sleepd: activity: network txrate: %ld rxrate: %ld\n",
 								(tx - tx_count[i])/sleep_time, (rx - rx_count[i])/sleep_time);
@@ -401,7 +407,8 @@ void main_loop (void) {
 					}
 					tx_count[i]=tx;
 					rx_count[i]=rx;
-				} else {
+				}
+				else {
 					break;
 				}
 			}
@@ -426,24 +433,26 @@ void main_loop (void) {
 			setutent();
 			while ((u=getutent())) {
 				if (u->ut_type == USER_PROCESS) {
-          /* get tty. From w.c in procps by Charles Blake. */
-          char tty[5 + sizeof u->ut_line + 1] = "/dev/";
-          for (i=0; i < sizeof u->ut_line; i++) {
-            /* clean up tty if garbled */
-            if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/')) {
-              tty[i+5] = u->ut_line[i];
-						} else {
-              tty[i+5] = '\0';
+					/* get tty. From w.c in procps by Charles Blake. */
+					char tty[5 + sizeof u->ut_line + 1] = "/dev/";
+					for (i=0; i < sizeof u->ut_line; i++) {
+						/* clean up tty if garbled */
+						if (isalnum(u->ut_line[i]) ||
+						    (u->ut_line[i]=='/')) {'
+							tty[i+5] = u->ut_line[i];
+						}
+						else {
+							tty[i+5] = '\0';
 						}
 					}
 					int cur_idle=idletime(tty);
 					min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
-					}
 				}
-				// The shortest idle time is the real idle time
-				total_unused = (min_idle < total_unused) ? min_idle : total_unused;
-				if (debug && total_unused == min_idle)
-					printf("sleepd: activity: utmp %d seconds\n", min_idle);
+			}
+			/* The shortest idle time is the real idle time */
+			total_unused = (min_idle < total_unused) ? min_idle : total_unused;
+			if (debug && total_unused == min_idle)
+				printf("sleepd: activity: utmp %d seconds\n", min_idle);
 		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
@@ -462,7 +471,8 @@ void main_loop (void) {
 					printf("sleepd: activity: keyboard/mouse events\n");
 				activity=1;
 			}
-		} else {
+		}
+		else {
 			sleep(sleep_time);
 		}
 

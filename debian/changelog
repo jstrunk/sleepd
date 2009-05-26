@@ -1,13 +1,15 @@
-sleepd (2.00) UNRELEASED; urgency=low
+sleepd (2.00) unstable; urgency=low
 
   * Jeff Strunk contributed support for monitoring /dev/input/event*
     files, to better support USB keyboards etc. Closes: #147678
+    This is now used by default, in addition to checking interrupts.
   * Jeff also added support for checking the utmp for idle times,
-    and for checking the system's load average.
+    for checking the system's load average, and for monitoring
+    a network device for activity. None done by default.
   * Use pm-suspend, rather than hibernate --force, to put the system
     to sleep by default.
 
- -- Joey Hess <joeyh@debian.org>  Fri, 15 May 2009 15:26:31 -0400
+ -- Joey Hess <joeyh@debian.org>  Mon, 18 May 2009 13:10:00 -0400
 
 sleepd (1.13) unstable; urgency=low
 
