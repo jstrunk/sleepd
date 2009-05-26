@@ -46,11 +46,6 @@ void initializeIE(void) {
 			strncpy(eventData.events[j], "", 1);
 		}
 
-		if (strncmp(eventData.events[0], "", 1) == 0) {
-			fprintf(stderr,"sleepd: there are no event files to watch.\n");
-			exit(1);
-		}
-
 		i=0;
 		j=0;
 		while (strncmp(eventData.events[i], "", 1) != 0) {
