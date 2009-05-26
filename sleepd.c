@@ -30,7 +30,7 @@
 #include "sleepd.h"
 
 int irqs[MAX_IRQS]; /* irqs to examine have a value of 1 */
-int autoprobe=0;
+int autoprobe=1;
 int have_irqs=0;
 int use_events=1;
 int max_unused=10 * 60; /* in seconds */
@@ -50,21 +50,29 @@ int use_acpi=0;
 int require_unused_and_battery=0;	/* --and or -A option */
 double max_loadavg = 0;
 int use_utmp=0;
+int use_net=0;
+int min_tx=TXRATE;
+int min_rx=RXRATE;
+char netdevtx[MAX_NET][44];
+char netdevrx[MAX_NET][44];
+int debug=0;
 
 void usage () {
-	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-c n] [-b n] [-A]\n");
+	fprintf(stderr, "Usage: sleepd [-s command] [-d command] [-u n] [-U n] [-I] [-i n] [-E] [-e filename] [-a] [-l n] [-w] [-n] [-v] [-c n] [-b n] [-A] [-N [dev] [-t n] [-r n]]\n");
 }
 
 void parse_command_line (int argc, char **argv) {
 	extern char *optarg;
 	struct option long_options[] = {
 		{"nodaemon", 0, NULL, 'n'},
+		{"verbose", 0, NULL, 'v'},
 		{"unused", 1, NULL, 'u'},
 		{"ac-unused", 1, NULL, 'U'},
 		{"load", 1, NULL, 'l'},
-		{"utmp", 1, NULL, 'w'},
+		{"utmp", 0, NULL, 'w'},
+		{"no-irq", 0, NULL, 'I'},
 		{"irq", 1, NULL, 'i'},
-		{"no-events", 1, NULL, 'E'},
+		{"no-events", 0, NULL, 'E'},
 		{"event", 1, NULL, 'e'},
 		{"help", 0, NULL, 'h'},
 		{"sleep-command", 1, NULL, 's'},
@@ -73,16 +81,24 @@ void parse_command_line (int argc, char **argv) {
 		{"check-period", 1, NULL, 'c'},
 		{"battery", 1, NULL, 'b'},
 		{"and", 0, NULL, 'A'},
+		{"netdev", 2, NULL, 'N'},
+		{"rx-min", 1, NULL, 'r'},
+		{"tx-min", 1, NULL, 't'},
 		{0, 0, 0, 0}
 	};
 	int force_autoprobe=0;
+	int noirq=0;
 	int i;
 	int c=0;
 	int event=0;
+	int netcount=0;
 	int result;
+	char tmpdev[8];
+	char tx_statfile[44];
+	char rx_statfile[44];
 
 	while (c != -1) {
-		c=getopt_long(argc,argv, "s:d:nu:U:l:wi:Ee:hac:b:A", long_options, NULL);
+		c=getopt_long(argc,argv, "s:d:nvu:U:l:wIi:Ee:hac:b:AN::r:t:", long_options, NULL);
 		switch (c) {
 			case 's':
 				sleep_command=strdup(optarg);
@@ -92,6 +108,9 @@ void parse_command_line (int argc, char **argv) {
 				break;
 			case 'n':
 				daemonize=0;
+				break;
+			case 'v':
+				debug=1;
 				break;
 			case 'u':
 				max_unused=atoi(optarg);
@@ -141,6 +160,9 @@ void parse_command_line (int argc, char **argv) {
 			case 'a':
 				force_autoprobe=1;
 				break;
+			case 'I':
+				noirq=1;
+				break;
 			case 'h':
 				usage();
 				exit(0);
@@ -159,6 +181,35 @@ void parse_command_line (int argc, char **argv) {
 					exit(1);
 				}
 				break;
+			case 'N':
+				if (optarg == NULL) {
+					if (netcount == 0) {
+						sprintf(tmpdev, "eth0");
+					} else {
+						fprintf(stderr, "sleepd: multiple -N options with no arguments\n");
+						exit(1);
+					}
+				} else {
+					strncpy(tmpdev, optarg, 8);
+				}
+				sprintf(tx_statfile, TXFILE, tmpdev);
+				sprintf(rx_statfile, RXFILE, tmpdev);
+				if ((access(tx_statfile, R_OK) == 0) && (access(rx_statfile, R_OK) == 0)) {
+					strncpy(netdevtx[netcount], tx_statfile, 44);
+					strncpy(netdevrx[netcount], rx_statfile, 44);
+					use_net=1;
+					netcount++;
+				} else {
+					fprintf(stderr, "sleepd: %s not found in sysfs\n", tmpdev);
+					exit(1);
+				}
+				break;
+			case 't':
+				min_tx = atoi(optarg);
+				break;
+			case 'r':
+				min_rx = atoi(optarg);
+				break;
 			case 'A':
 				require_unused_and_battery=1;
 				break;
@@ -171,6 +222,13 @@ void parse_command_line (int argc, char **argv) {
 
 	if (use_events)
 		strncpy(eventData.events[event], "", 1);
+
+	if (use_net)
+		strncpy(netdevtx[netcount], "", 1);
+		strncpy(netdevrx[netcount], "", 1);
+
+	if (noirq)
+		autoprobe=0;
 
 	if (force_autoprobe)
 		autoprobe=1;
@@ -208,11 +266,13 @@ int idletime (const char *tty) {
 	struct stat sbuf;
 	if (stat(tty, &sbuf) != 0)
 		return 0;
-	return (int)((long)time(NULL) - (long)sbuf.st_atime);
+	return (int)(time(NULL) - sbuf.st_atime);
 }
 
 void main_loop (void) {
 	long irq_count[MAX_IRQS]; /* holds previous counters of the irq's */
+	long tx_count[MAX_NET]; /* holds previous counters of tx packets */
+	long rx_count[MAX_NET]; /* holds previous counters of rx packets */
 	int i, do_this_one=0, probed=0;
 	FILE *f;
 	char line[64];
@@ -254,6 +314,8 @@ void main_loop (void) {
 			if (system(hibernate_command) != 0)
 				syslog(LOG_ERR, "%s failed", hibernate_command);
 			/* This counts as activity; to prevent double sleeps. */
+			if (debug)
+				printf("sleepd: activity: just woke up\n");
 			activity=1;
 			oldtime=0;
 			sleep_battery=0;
@@ -293,6 +355,8 @@ void main_loop (void) {
 				if (sscanf(line,"%d: %ld",&i, &v) == 2 &&
 				    i < MAX_IRQS &&
 				    (do_this_one || irqs[i]) && irq_count[i] != v) {
+					if (debug)
+						printf("sleepd: activity: irq %d\n", i);
 					activity=1;
 					irq_count[i] = v;
 				}
@@ -307,11 +371,49 @@ void main_loop (void) {
 			}
 		}
 
+		if (use_net) {
+			long tx,rx;
+			for (i=0; i < MAX_NET; i++) {
+				if (strncmp(netdevtx[i], "", 1) != 0) {
+					f=fopen(netdevtx[i], "r");
+					if (fgets(line,sizeof(line),f)) {
+						tx = strtol(line, (char **) NULL, 10);
+					} else {
+						fprintf(stderr, "sleepd: could not read %s\n", netdevtx[i]);
+						exit(1);
+					}
+					fclose(f);
+					f=fopen(netdevrx[i], "r");
+					if (fgets(line,sizeof(line),f)) {
+						rx = strtol(line, (char **) NULL, 10);
+					} else {
+						fprintf(stderr, "sleepd: could not read %s\n", netdevrx[i]);
+						exit(1);
+					}
+					fclose(f);
+					if (((tx - tx_count[i])/sleep_time > min_tx) ||
+							((rx - rx_count[i])/sleep_time > min_rx)) {
+						if (debug) {
+							printf("sleepd: activity: network txrate: %ld rxrate: %ld\n",
+								(tx - tx_count[i])/sleep_time, (rx - rx_count[i])/sleep_time);
+						}
+						activity=1;
+					}
+					tx_count[i]=tx;
+					rx_count[i]=rx;
+				} else {
+					break;
+				}
+			}
+		}
+
 		if ((max_loadavg != 0) &&
 		    (getloadavg(loadavg, 1) == 1) &&
 		    (loadavg[0] >= max_loadavg)) {
 			/* If the load average is too high */
-			activity = 1;
+			if (debug)
+				printf("sleepd: activity: load average %f\n", loadavg[0]);
+			activity=1;
 		}
 
 		if (use_utmp == 1) {
@@ -323,23 +425,31 @@ void main_loop (void) {
 			utmpname(UTMP_FILE);
 			setutent();
 			while ((u=getutent())) {
-				/* get tty. From w.c in procps by Charles Blake. */
-				char tty[5 + sizeof u->ut_line + 1] = "/dev/";
-				for (i=0; i < sizeof u->ut_line; i++)
-					/* clean up tty if garbled */
-					if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/'))
-						tty[i+5] = u->ut_line[i];
-					else
-						tty[i+5] = '\0';
+				if (u->ut_type == USER_PROCESS) {
+          /* get tty. From w.c in procps by Charles Blake. */
+          char tty[5 + sizeof u->ut_line + 1] = "/dev/";
+          for (i=0; i < sizeof u->ut_line; i++) {
+            /* clean up tty if garbled */
+            if (isalnum(u->ut_line[i]) || (u->ut_line[i]=='/')) {
+              tty[i+5] = u->ut_line[i];
+						} else {
+              tty[i+5] = '\0';
+						}
+					}
 					int cur_idle=idletime(tty);
 					min_idle = (cur_idle < min_idle) ? cur_idle : min_idle;
 					}
+				}
 				// The shortest idle time is the real idle time
 				total_unused = (min_idle < total_unused) ? min_idle : total_unused;
+				if (debug && total_unused == min_idle)
+					printf("sleepd: activity: utmp %d seconds\n", min_idle);
 		}
 
 		if (ai.ac_line_status != prev_ac_line_status) {
 			/* AC plug/unplug counts as activity. */
+			if (debug)
+				printf("sleepd: activity: AC status change\n");
 			activity=1;
 		}
 		prev_ac_line_status=ai.ac_line_status;
@@ -348,7 +458,9 @@ void main_loop (void) {
 		if (use_events) {
 			pthread_join(emthread, NULL);
 			if (eventData.emactivity == 1) {
-				activity = 1;
+				if (debug)
+					printf("sleepd: activity: keyboard/mouse events\n");
+				activity=1;
 			}
 		} else {
 			sleep(sleep_time);
