@@ -2,8 +2,10 @@
 #
 ### BEGIN INIT INFO
 # Provides:          sleepd
-# Required-Start:    $syslog $local_fs $remote_fs dbus hal
-# Required-Stop:     $syslog $local_fs $remote_fs dbus hal
+# Required-Start:    $syslog $local_fs $remote_fs
+# Required-Stop:     $syslog $local_fs $remote_fs
+# Should-Start:      dbus hal
+# Should-Stop:       dbus hal
 # Default-Start:     2 3 4 5
 # Default-Stop:      1
 # Short-Description: Sleep daemon
