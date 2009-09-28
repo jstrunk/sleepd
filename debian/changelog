@@ -1,9 +1,9 @@
-sleepd (2.01) UNRELEASED; urgency=low
+sleepd (2.01) unstable; urgency=low
 
   * Fix init script to not declare hard dependencies on dbus and
     hal. Closes: #548624
 
- -- Joey Hess <joeyh@debian.org>  Sun, 27 Sep 2009 21:35:29 -0400
+ -- Joey Hess <joeyh@debian.org>  Sun, 27 Sep 2009 21:36:06 -0400
 
 sleepd (2.00) unstable; urgency=low
 
