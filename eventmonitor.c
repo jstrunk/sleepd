@@ -69,9 +69,6 @@ void cleanupIE(void)  {
 void *eventMonitor() {
 	int i, maxfd=0, retval;
 	struct timeval tv;
-	time_t start, end;
-	int elapsed;
-	start = time(NULL);
 	initializeIE();
 	fd_set eventWatch;
 	eventData.emactivity = 0;
@@ -83,21 +80,12 @@ void *eventMonitor() {
 	}
 
 	maxfd++;
-	/* 1 second less to avoid blocking sleepd too long and making
-	 * it think the laptop went to sleep. Nasty. */
-	tv.tv_sec = eventData.timeout - 1; 
+	tv.tv_sec = eventData.timeout;
 	tv.tv_usec = 0;
 	retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
 
-	if (retval > 0 )
-	{
+	if (retval > 0 ) {
 		eventData.emactivity = 1;
-	}
-	end = time(NULL);
-	elapsed = (end - start);
-	if ((eventData.timeout - elapsed) >= 1)
-	{
-		sleep(eventData.timeout - elapsed);
 	}
 
 	cleanupIE();
@@ -117,9 +105,8 @@ int main()
 	activity = 0;
 	//start the eventMonitor
 	pthread_create(&mainthread, NULL, eventMonitor, NULL);
-	// Do other stuff here.
-	// When other stuff is complete, don't run sleep.
-	// eventMonitor sleeps for timeout, and pthread_join blocks until it exits.
+	// Do other stuff here, and sleep at least timeout seconds.
+	// The data will be ready by then.
 	pthread_join(mainthread,NULL);
 	printf("activity=%d\n", activity);
 	//end loops here

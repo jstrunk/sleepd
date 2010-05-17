@@ -1,8 +1,7 @@
 sleepd (2.02) UNRELEASED; urgency=low
 
-  * Hack around a timing issue in the eventmonitor code that could make
-    sleepd think the laptop was suspended.
-    (See http://github.com/jstrunk/sleepd/commit/a1a1a9a9370987d9624bb990edbfd1cbf1017cc0)
+  * Avoid eventmonitor sleeping too long until thread join. In fact, don't
+    sleep at all.
 
  -- Joey Hess <joeyh@debian.org>  Mon, 17 May 2010 17:55:45 -0400
 

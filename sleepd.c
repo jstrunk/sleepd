@@ -486,6 +486,8 @@ void main_loop (void) {
 		}
 		prev_ac_line_status=ai.ac_line_status;
 
+		sleep(sleep_time);
+
 		if (use_events) {
 			pthread_join(emthread, NULL);
 			if (eventData.emactivity == 1) {
@@ -493,9 +495,6 @@ void main_loop (void) {
 					printf("sleepd: activity: keyboard/mouse events\n");
 				activity=1;
 			}
-		}
-		else {
-			sleep(sleep_time);
 		}
 
 		if (activity) {
