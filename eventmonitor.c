@@ -83,7 +83,9 @@ void *eventMonitor() {
 	}
 
 	maxfd++;
-	tv.tv_sec = eventData.timeout;
+	/* 1 second less to avoid blocking sleepd too long and making
+	 * it think the laptop went to sleep. Nasty. */
+	tv.tv_sec = eventData.timeout - 1; 
 	tv.tv_usec = 0;
 	retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
 
