@@ -1,7 +1,6 @@
 sleepd (2.02) UNRELEASED; urgency=low
 
-  * Avoid eventmonitor sleeping too long until thread join. In fact, don't
-    sleep at all.
+  * Avoid eventmonitor delaying too long until thread join.
 
  -- Joey Hess <joeyh@debian.org>  Mon, 17 May 2010 17:55:45 -0400
 
