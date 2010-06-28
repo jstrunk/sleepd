@@ -28,6 +28,10 @@
 
 #include "eventmonitor.h"
 
+pthread_mutex_t activity_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t condition_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t condition_cond = PTHREAD_COND_INITIALIZER;
+
 void initializeIE(void) {
 	int j=0;
 	int i;
@@ -68,27 +72,37 @@ void cleanupIE(void)  {
 
 void *eventMonitor() {
 	int i, maxfd=0, retval;
-	struct timeval tv;
-	initializeIE();
 	fd_set eventWatch;
-	eventData.emactivity = 0;
-	FD_ZERO(&eventWatch);
-	for (i=0; eventData.channels[i] != -1; i++) {
-		FD_SET (eventData.channels[i], &eventWatch);
-		if (eventData.channels[i] > maxfd)
-			maxfd = eventData.channels[i];
+
+	while (1) {
+		initializeIE();
+		FD_ZERO(&eventWatch);
+		for (i=0; eventData.channels[i] != -1; i++) {
+			FD_SET (eventData.channels[i], &eventWatch);
+			if (eventData.channels[i] > maxfd)
+				maxfd = eventData.channels[i];
+		}
+
+		maxfd++;
+
+	  pthread_mutex_lock(&condition_mutex);
+		pthread_cond_wait(&condition_cond, &condition_mutex);
+		pthread_mutex_unlock(&condition_mutex);
+
+		pthread_mutex_lock(&activity_mutex);
+		eventData.emactivity = 0;
+		pthread_mutex_unlock(&activity_mutex);
+
+		retval = select(maxfd, &eventWatch, NULL, NULL, NULL);
+
+		if (retval > 0 ) {
+			pthread_mutex_lock(&activity_mutex);
+			eventData.emactivity = 1;
+			pthread_mutex_unlock(&activity_mutex);
+		}
+		cleanupIE();
 	}
 
-	maxfd++;
-	tv.tv_sec = eventData.timeout;
-	tv.tv_usec = 0;
-	retval = select(maxfd, &eventWatch, NULL, NULL, &tv);
-
-	if (retval > 0 ) {
-		eventData.emactivity = 1;
-	}
-
-	cleanupIE();
 	pthread_exit(NULL);
 }
 

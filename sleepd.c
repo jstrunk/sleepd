@@ -412,14 +412,19 @@ void main_loop (void) {
 	int prev_ac_line_status=0;
 	time_t nowtime, oldtime=0;
 	apm_info ai;
-	pthread_t emthread;
-	eventData.timeout = sleep_time;
 	double loadavg[1];
+
+	if (use_events) {
+		pthread_t emthread;
+		pthread_create(&emthread, NULL, eventMonitor, NULL);
+	}
 
 	while (1) {
 		activity=0;
 		if (use_events) {
-			pthread_create(&emthread, NULL, eventMonitor, NULL);
+			pthread_mutex_lock(&condition_mutex);
+			pthread_cond_signal(&condition_cond);
+			pthread_mutex_unlock(&condition_mutex);
 		}
 
 		if (use_acpi) {
@@ -489,12 +494,13 @@ void main_loop (void) {
 		sleep(sleep_time);
 
 		if (use_events) {
-			pthread_join(emthread, NULL);
+			pthread_mutex_lock(&activity_mutex);
 			if (eventData.emactivity == 1) {
 				if (debug)
 					printf("sleepd: activity: keyboard/mouse events\n");
 				activity=1;
 			}
+			pthread_mutex_unlock(&activity_mutex);
 		}
 
 		if (activity) {
